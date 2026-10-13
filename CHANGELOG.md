@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- New `[drag] hold-to-split = true` splits a tile on a drop: hold a dragged window still over another tile for half a second and it takes the half the pointer is in instead of swapping. `hold-ms` sets the wait. Off by default.
+
 ## 0.21
 
 **Upgrading:** `layout scrolling`, `layout master` and `layout dwindle` no longer parse, so a config binding them fails to load. Write `workspace-layout scrolling`, `master` or `dwindle` instead, and split a cycle like `layout tiles accordion scrolling` into `layout tiles accordion` and `workspace-layout dwindle scrolling`.
