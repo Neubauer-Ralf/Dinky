@@ -21,8 +21,9 @@ Latest release: **{{ site.version }}**
 
 dinky tiles the windows on each native Space and switches Spaces in about 70 ms
 instead of half a second. It has an accordion mode, a scrolling layout after
-niri and Hyprland, focus borders, a TOML config and a `dinky` command line for
-scripts and bars. Nothing is injected into the Dock.
+niri and Hyprland, a master layout after Hyprland's, focus borders, a TOML
+config and a `dinky` command line for scripts and bars. Nothing is injected into
+the Dock.
 
 It is not a compositor: macOS still draws every window. Windows glide to their
 tiles by being moved there, frame by frame, and a column scrolled out of view

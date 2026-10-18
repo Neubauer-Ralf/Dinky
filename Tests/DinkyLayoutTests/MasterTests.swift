@@ -3,8 +3,8 @@ import Testing
 @testable import DinkyLayout
 
 /// A master workspace 1000 by 600 without gaps, windows 1...n inserted in order, so 1 is the master and n is focused.
-private func master(_ n: Int, _ orientation: MasterOrientation = .left, size: Double = 0.6) -> Workspace {
-    var ws = Workspace(bounds: rect(0, 0, 1000, 600), algorithm: .master(orientation))
+private func master(_ n: Int, _ side: MasterSide = .left, size: Double = 0.6) -> Workspace {
+    var ws = Workspace(bounds: rect(0, 0, 1000, 600), algorithm: .master(side))
     ws.masterSize = size
     for id in 0..<n { ws.insert(WindowID(id + 1)) }
     return ws
@@ -34,7 +34,7 @@ struct MasterGeometryTests {
         #expect(f[4] == rect(600, 400, 400, 200))
     }
 
-    @Test func `The right orientation puts the master on the right`() {
+    @Test func `The right side puts the master on the right`() {
         let f = frames(master(3, .right))
         #expect(f[1] == rect(400, 0, 600, 600))
         #expect(f[2] == rect(0, 0, 400, 300))
@@ -323,6 +323,113 @@ struct MasterCommandTests {
         #expect(frames(ws)[3] == rect(0, 300, 300, 300))
         #expect(frames(ws)[4] == rect(300, 300, 300, 300))
         #expect(frames(ws)[2] == rect(600, 0, 400, 600), "the rest stays put")
+    }
+
+    @Test func `Switching from master to scrolling keeps the master order`() {
+        var ws = master(3)
+        ws.focus(3)
+        let swapped = ws.swapWithMaster()
+        #expect(swapped)
+        #expect(ws.windows == [3, 2, 1])
+        ws.setAlgorithm(.scrolling)
+        #expect(ws.windows == [3, 2, 1], "the master first, then the stack from the top")
+        #expect(ws.focused == 3)
+    }
+
+    @Test func `Switching from master on the right to dwindle puts the master first`() {
+        var ws = master(3, .right)
+        #expect(ws.windows == [2, 3, 1], "the stack comes first in the tree")
+        ws.setAlgorithm(.dwindle(.tiles))
+        #expect(ws.windows == [1, 2, 3])
+        #expect(ws.focused == 3)
+    }
+
+    @Test func `A fullscreen window covers the master layout and leaves it as it was`() {
+        var ws = master(3)
+        ws.focus(2)
+        ws.toggleFullscreen()
+        #expect(frames(ws)[2] == rect(0, 0, 1000, 600))
+        #expect(ws.masterWindow == 1)
+        #expect(ws.layout().order.first == 2)
+        ws.toggleFullscreen()
+        #expect(frames(ws)[1] == rect(0, 0, 600, 600))
+        #expect(frames(ws)[2] == rect(600, 0, 400, 300))
+    }
+
+    @Test func `Swapping with the master ends fullscreen`() {
+        var ws = master(3)
+        ws.focus(2)
+        ws.toggleFullscreen()
+        let swapped = ws.swapWithMaster()
+        #expect(swapped)
+        #expect(ws.fullscreen == nil)
+        #expect(frames(ws)[2] == rect(0, 0, 600, 600))
+    }
+
+    @Test func `A window opening over a fullscreen one joins the stack and ends fullscreen`() {
+        var ws = master(2)
+        ws.focus(1)
+        ws.toggleFullscreen()
+        ws.insert(3)
+        #expect(ws.fullscreen == nil)
+        #expect(ws.masterWindow == 1)
+        #expect(frames(ws)[3] == rect(600, 300, 400, 300))
+    }
+
+    @Test func `Resizing the master changes its share but not the configured size`() {
+        var ws = master(3)
+        ws.focus(2)
+        let widened = ws.resize(by: -100, along: .horizontal)
+        #expect(widened, "a stacked window's width is the master's share too")
+        #expect(frames(ws)[1] == rect(0, 0, 700, 600))
+        #expect(frames(ws)[2] == rect(700, 0, 300, 300))
+        #expect(ws.masterSize == 0.6)
+        let dragged = ws.resize(1, to: CGSize(width: 550, height: 600), moving: [.right])
+        #expect(dragged)
+        #expect(frames(ws)[1] == rect(0, 0, 550, 600))
+        #expect(frames(ws)[3] == rect(550, 300, 450, 300))
+        ws.balanceSizes()
+        #expect(frames(ws)[1] == rect(0, 0, 600, 600))
+    }
+
+    @Test func `A new size from the config waits for balance or a stack opened again`() {
+        var ws = master(2)
+        ws.masterSize = 0.5
+        #expect(frames(ws)[1] == rect(0, 0, 600, 600), "an open stack keeps its share")
+        ws.balanceSizes()
+        #expect(frames(ws)[1] == rect(0, 0, 500, 600))
+        ws.remove(2)
+        ws.masterSize = 0.7
+        ws.insert(3)
+        #expect(frames(ws)[1] == rect(0, 0, 700, 600))
+    }
+
+    @Test func `A new side from the config keeps the master, the stack and its mode`() {
+        var ws = master(3)
+        ws.setLayout(.accordion, nil)
+        ws.focus(2)
+        ws.setAlgorithm(.master(.right))
+        #expect(ws.masterWindow == 1)
+        #expect(ws.focused == 2)
+        #expect(frames(ws)[1] == rect(400, 0, 600, 600))
+        #expect(ws.container(of: 2)?.mode == .accordion)
+        #expect(ws.container(of: 2) == ws.container(of: 3))
+        ws.setAlgorithm(.master(.left))
+        #expect(frames(ws)[1] == rect(0, 0, 600, 600))
+        #expect(ws.windows == [1, 2, 3])
+    }
+
+    @Test func `A window floated leaves the master layout and tiles again at the bottom of the stack`() {
+        // The coordinator takes a floating window out of the workspace and inserts it again when it tiles.
+        var ws = master(3)
+        ws.remove(1)
+        #expect(ws.masterWindow == 2, "floating the master promotes the top of the stack")
+        ws.insert(1)
+        #expect(ws.windows == [2, 3, 1])
+        #expect(frames(ws)[1] == rect(600, 300, 400, 300))
+        ws.remove(3)
+        ws.remove(1)
+        #expect(frames(ws)[2] == rect(0, 0, 1000, 600), "floating the whole stack gives the master the screen")
     }
 }
 

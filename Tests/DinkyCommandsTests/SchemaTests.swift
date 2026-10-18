@@ -84,7 +84,7 @@ struct SchemaTests {
 
         [master]
         size = 0.55
-        orientation = 'right'
+        side = 'right'
 
         [gaps]
         inner.horizontal = 4

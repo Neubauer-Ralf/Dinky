@@ -82,15 +82,15 @@ final class WorkspaceNumbers {
     }
 
     /// Runs the plan's steps until the Spaces match the config. Blocks the main thread while it works; each step
-    /// waits for WindowServer to show its result, normally within a poll or two. Does nothing while dinky is
-    /// disabled, which leaves Spaces and windows alone; enabling arranges.
+    /// waits for WindowServer to show its result, normally within a poll or two. While dinky is disabled it only
+    /// numbers the Spaces as they are, leaving Spaces and windows alone; enabling arranges.
     func arrange() {
         guard AppState.shared.enabled else {
             // Windows stay where macOS put them, and homes are noted again from here.
             if displaced.arranged(enabled: false, completed: false) == .leaveThem {
                 print("workspaces: windows a display change moved while dinky was disabled stay where they are")
             }
-            return
+            return numberInPlace()
         }
         guard !arranging else { return }
         // A swipe in flight would land on a Space this may remove.
@@ -141,6 +141,31 @@ final class WorkspaceNumbers {
         }
         fflush(stdout)
         AppState.shared.coordinator?.reconcile()
+        onArranged?()
+    }
+
+    /// Numbers the Spaces as they stand, taking one plan step without carrying it out, so `workspace <n>`, the
+    /// status item and hooks have a numbering while disabled: after a display change the old binding names Spaces
+    /// that are gone, and started disabled there is none. A workspace the step would move stays on the Space its
+    /// windows are on; one it would create stays unbound until enabling creates it.
+    private func numberInPlace() {
+        let model = AppState.shared.displays
+        model.reconcile()
+        let displays = model.displays.map {
+            PlanDisplay(uuid: $0.uuid, monitor: model.monitor($0), spaces: $0.userSpaces, current: $0.currentSpaceID)
+        }
+        let start = binding
+        let step = WorkspacePlan(AppState.shared.config)
+            .step(displays, binding: binding, occupied: occupiedSpaces(among: displays.flatMap(\.spaces)))
+        binding = step.binding
+        if case .move(let from, let to) = step.action, let n = binding.first(where: { $0.value == to })?.key {
+            binding[n] = from
+        }
+        if binding != start {
+            print("workspaces: " + binding.keys.sorted().map { "\($0)=\(binding[$0]!)" }.joined(separator: " "))
+            fflush(stdout)
+            observers.forEach { $0() }
+        }
         onArranged?()
     }
 

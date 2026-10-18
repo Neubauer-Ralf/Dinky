@@ -109,11 +109,11 @@
           "default": 0.6,
           "description": "The master's share of the display while windows are stacked beside it. Hyprland's mfact."
         },
-        "orientation": {
+        "side": {
           "type": "string",
           "enum": ["left", "right"],
           "default": "left",
-          "description": "The side the master takes; the stack goes on the other."
+          "description": "The side the master takes; the stack goes on the other. Hyprland's orientation."
         }
       }
     },

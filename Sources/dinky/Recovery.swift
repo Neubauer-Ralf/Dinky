@@ -4,8 +4,8 @@ import DinkyPrivate
 
 // Restore on disable and quit, and crash recovery. Before dinky tiles a window, its original frame and
 // Space are journaled once and saved to disk, so a crash leaves them behind. Disabling or quitting puts
-// every journaled window back; one it could not put back stays journaled for the next try, unless it is moved
-// by hand meanwhile (see FailedRestores). After a crash, the next launch keeps the entries whose windows still
+// every journaled window back; one it could not put back for a passing reason stays journaled for the next try,
+// unless it is moved by hand meanwhile (see FailedRestores and RestoreProblem). After a crash, the next launch keeps the entries whose windows still
 // exist with the same owner and offers to restore them. Main thread only.
 final class Recovery {
     struct Entry: Codable {
@@ -28,10 +28,6 @@ final class Recovery {
     static let url = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Library/Application Support/dinky/journal.json")
 
-    /// Restore problems no retry can fix. Every other failed window stays journaled for the next restore.
-    private static let closed = "closed"
-    private static let spaceGone = "its Space is gone"
-    private static let movedByHand = "moved by hand since the last try, leaving it there"
     /// How long a restore waits for apps to take their frames. A hung app must not hold up quitting for long.
     private static let answerTimeout: TimeInterval = 3
 
@@ -69,8 +65,8 @@ final class Recovery {
     }
 
     /// Stops journaling, moves every journaled window back to its Space, writes its frame, and forgets the
-    /// windows put back or gone for good. The rest stay journaled, on disk too, so the next restore or a
-    /// `dinky recover` after relaunching tries them again. Blocks until the frames are written. Returns a
+    /// windows put back or that no retry would help (`RestoreProblem.retries`). The rest stay journaled, on disk
+    /// too, so the next restore or a `dinky recover` after relaunching tries them again. Blocks until the frames are written. Returns a
     /// summary; what could not be restored is logged.
     @discardableResult
     func restore() -> String {
@@ -78,21 +74,21 @@ final class Recovery {
         guard let model, !entries.isEmpty else { return "nothing to restore" }
         let displays = AppState.shared.displays
         displays.reconcile()
-        var problems: [UInt32: String] = [:]  // by window id
+        var problems: [UInt32: RestoreProblem] = [:]  // by window id
         let live = entries.values.sorted { $0.id < $1.id }.filter { entry in
             guard model.windows[entry.id]?.identity == entry.identity else {
-                problems[entry.id] = Self.closed
+                problems[entry.id] = .closed
                 return false
             }
             let now = position(of: entry.id)
             // Already in place, possibly on a Space AX cannot reach; or a late answer from an app a try gave up on.
             if now == WindowPosition(frame: entry.frame, spaceID: entry.spaceID) { return false }
             if failed.movedByHand(entry.id, now: now) {
-                problems[entry.id] = Self.movedByHand
+                problems[entry.id] = .movedByHand
                 return false
             }
             guard displays.displays.contains(where: { $0.frame.intersects(entry.frame) }) else {
-                problems[entry.id] = "its display is gone"
+                problems[entry.id] = .displayGone
                 return false
             }
             return true
@@ -103,13 +99,12 @@ final class Recovery {
         let moved = moveBack(live, problems: &problems)
         for (id, result) in writeFrames(live.filter { moved.contains($0.id) }) { results[id] = result }
         for entry in live where results[entry.id]?.matched != true && problems[entry.id] == nil {
-            let outcome = switch results[entry.id] {
-            case nil: "no answer within \(Int(Self.answerTimeout)) s"
-            case let result?: result.got.map { "frame \($0)" } ?? "unreadable"
+            problems[entry.id] = switch results[entry.id] {
+            case nil: .noAnswer(seconds: Int(Self.answerTimeout))
+            case let result?: result.got.map { .wrongFrame(got: $0, wanted: entry.frame) } ?? .unreadable(wanted: entry.frame)
             }
-            problems[entry.id] = "\(outcome), wanted \(entry.frame)"
         }
-        let retry = problems.filter { ![Self.closed, Self.spaceGone, Self.movedByHand].contains($0.value) }
+        let retry = problems.filter(\.value.retries)
         for (id, problem) in problems.sorted(by: { $0.key < $1.key }) {
             fputs("recovery: window \(id): \(problem)\(retry[id] == nil ? "" : ", kept to try again")\n", stderr)
         }
@@ -224,24 +219,24 @@ final class Recovery {
     }
 
     /// Moves windows that are off their original Space back onto it, if it still exists. Returns the ids that arrived.
-    private func moveBack(_ entries: [Entry], problems: inout [UInt32: String]) -> Set<UInt32> {
+    private func moveBack(_ entries: [Entry], problems: inout [UInt32: RestoreProblem]) -> Set<UInt32> {
         let displays = AppState.shared.displays
         var targets: [UInt32: UInt64] = [:]
         for entry in entries where entry.spaceID != 0 && dinky_window_space_id(entry.id) != entry.spaceID {
             var ids = [entry.id]
             if displays.display(containingSpace: entry.spaceID) == nil {
-                problems[entry.id] = Self.spaceGone
+                problems[entry.id] = .spaceGone
             } else if dinky_move_windows_to_space(&ids, 1, entry.spaceID) {
                 targets[entry.id] = entry.spaceID
             } else {
-                problems[entry.id] = "move to its Space failed"
+                problems[entry.id] = .spaceMoveFailed
             }
         }
         // The bridged move is asynchronous.
         let arrived = { Set(targets.filter { dinky_window_space_id($0.key) == $0.value }.keys) }
         _ = waitUntil(1) { arrived().count == targets.count }
         let done = arrived()
-        for id in targets.keys where !done.contains(id) { problems[id] = "did not arrive on its Space" }
+        for id in targets.keys where !done.contains(id) { problems[id] = .didNotArrive }
         return done
     }
 }

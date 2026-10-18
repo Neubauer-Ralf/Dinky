@@ -19,17 +19,33 @@ final class BorderManager {
     /// those of windows that only moved.
     private var pending = (refocus: false, all: false, ids: Set<UInt32>(), moved: Set<UInt32>())
     private var flushScheduled = false
+    /// Whether a delayed focus check is on its way: a burst of activations and reorders needs only one.
+    private var refocusScheduled = false
     /// Whether dinky is animating the window, when its border only follows moves: redrawing it at every
     /// size of a resize costs more than a frame.
     private let isAnimating: (UInt32) -> Bool
 
-    init(config: Borders, model: WindowModel, isAnimating: @escaping (UInt32) -> Bool) {
+    init(config: Borders, model: WindowModel, displays: [Display], isAnimating: @escaping (UInt32) -> Bool) {
         self.config = config
         self.model = model
         self.isAnimating = isAnimating
-        refreshSpaces()
+        visibleSpaces = Self.visibleSpaces(on: displays)
         focusedID = dinky_border_focused_window()
         syncAll()
+    }
+
+    /// The display model changed. It also hears of Space changes WindowServer sends no event for (a swipe posted
+    /// by another process, caught by its poll or an NSWorkspace notification), so borders follow it rather than
+    /// the raw events, which would leave them drawn for the Space just left.
+    func spacesChanged(_ displays: [Display]) {
+        let fresh = Self.visibleSpaces(on: displays)
+        guard fresh != visibleSpaces else { return }
+        visibleSpaces = fresh
+        pending.refocus = true
+        pending.all = true
+        scheduleFlush()
+        // With no front-app event to follow, the arriving Space's front window may still be settling.
+        scheduleRefocus()
     }
 
     func update(config: Borders) {
@@ -44,17 +60,16 @@ final class BorderManager {
     func handle(_ event: WindowEvent) {
         switch event.kind {
         case .spaceChange, .spaceCreated, .spaceDestroyed:
-            refreshSpaces()
             pending.refocus = true
             pending.all = true
         case .frontApp:
             pending.refocus = true
             // The new app's front window can settle a few ms after the app (JankyBorders waits 20 ms).
-            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(20)) { [weak self] in self?.refocus() }
+            scheduleRefocus()
         case .windowReorder:
             pending.refocus = true
             // A click between one app's windows can report the previous one in front for a few ms.
-            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(20)) { [weak self] in self?.refocus() }
+            scheduleRefocus()
         case .windowUpdate, .windowCreate, .windowDestroy, .windowTitle:
             pending.refocus = true
         default:
@@ -87,6 +102,15 @@ final class BorderManager {
         guard !flushScheduled else { return }
         flushScheduled = true
         DispatchQueue.main.async { [weak self] in self?.flush() }
+    }
+
+    private func scheduleRefocus() {
+        guard !refocusScheduled else { return }
+        refocusScheduled = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(20)) { [weak self] in
+            self?.refocusScheduled = false
+            self?.refocus()
+        }
     }
 
     /// Does what the events since the last flush asked for: focus first, then the borders.
@@ -149,10 +173,7 @@ final class BorderManager {
     }
 
     // The current Space of every display, full-screen Spaces left out.
-    private func refreshSpaces() {
-        visibleSpaces = Set(dinky_displays().compactMap { display in
-            let current = display.spaces.first { $0.spaceID == display.currentSpaceID }
-            return current?.isFullscreen == true ? nil : display.currentSpaceID
-        })
+    private static func visibleSpaces(on displays: [Display]) -> Set<UInt64> {
+        Set(displays.compactMap { $0.userSpaces.contains($0.currentSpaceID) ? $0.currentSpaceID : nil })
     }
 }

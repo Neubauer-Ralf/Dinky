@@ -82,6 +82,7 @@ final class Coordinator {
         var known = displays.displays
         displays.observe { [weak self] displays in
             guard let self else { return }
+            borders?.spacesChanged(displays.displays)
             let before = known
             known = displays.displays
             if Set(known.map(\.uuid)) != Set(before.map(\.uuid)) { snap.formUnion(workspaces.keys) }
@@ -123,7 +124,7 @@ final class Coordinator {
     /// and nothing follows windows as they move.
     private func updateBorders() {
         if enabled, config.borders.enabled {
-            borders = borders ?? BorderManager(config: config.borders, model: model,
+            borders = borders ?? BorderManager(config: config.borders, model: model, displays: displays.displays,
                                                isAnimating: { [unowned self] id in animator.isAnimating(id) })
             borders?.update(config: config.borders)
         } else {

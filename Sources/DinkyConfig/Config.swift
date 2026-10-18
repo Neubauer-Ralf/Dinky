@@ -260,15 +260,15 @@ public struct Master: Equatable {
     /// The master's share of the display's width inside the outer gaps while other windows are stacked beside it.
     /// Hyprland calls it `mfact`. Alone, the master fills the display.
     public var size = 0.6
-    /// The side the master takes; the stack goes on the other.
-    public var orientation = MasterSide.left
+    /// The side the master takes; the stack goes on the other. Hyprland calls it `orientation`.
+    public var side = MasterSide.left
 
     public init() {}
 
     init(_ t: Table) throws {
         size = try t.double("size") ?? size
         guard (0.1...0.9).contains(size) else { throw ConfigError(path: t.path("size"), "must be 0.1 to 0.9") }
-        orientation = try t.choice("orientation") ?? orientation
+        side = try t.choice("side") ?? side
         try t.done()
     }
 }
