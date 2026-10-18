@@ -76,7 +76,7 @@ final class Coordinator {
 
     /// `beforeTiling` runs once the model has read every window, whether or not it is subscribed to events, and
     /// before anything is tiled: the last moment the frames it holds are the ones dinky found.
-    func start(beforeTiling: () -> Void = {}) {
+    func start(beforeTiling: () -> Void) {
         model.observe { [weak self] event in self?.handle(event) }
         animator.onArrive = { [weak self] ids in self?.borders?.arrived(ids) }
         var known = displays.displays
