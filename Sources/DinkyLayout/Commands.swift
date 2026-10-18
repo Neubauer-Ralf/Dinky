@@ -106,12 +106,12 @@ extension Workspace {
         return isScrolling ? joinInStrip(direction) : joinInTree(direction)
     }
 
-    /// `atDepth` pins the level the window joins at, as the strip does for its columns; nil takes the deepest
+    /// `atRoot` joins at the root, as the strip does for its columns; otherwise the window joins at the deepest
     /// container along the direction with a neighbour there.
-    mutating func joinInTree(_ direction: Direction, atDepth pinned: Int? = nil) -> Bool {
+    mutating func joinInTree(_ direction: Direction, atRoot: Bool = false) -> Bool {
         guard let focused, let path = root.path(of: focused) else { return false }
         let forward = direction.isForward, offset = forward ? 1 : -1, layout = tiledLayout()
-        guard let depth = pinned ?? path.indices.last(where: { depth in
+        guard let depth = atRoot ? 0 : path.indices.last(where: { depth in
             let prefix = Array(path.prefix(depth))
             return axisOfContainer(at: prefix, in: layout) == direction.orientation
                 && root.container(at: prefix).children.indices.contains(path[depth] + offset)

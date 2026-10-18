@@ -162,7 +162,7 @@ extension Workspace {
         guard root.children.indices.contains(neighbour) else { return false }
         let share = width(ofColumn: neighbour)
         // Joined at the root, so a window deep in its column still lands in the neighbouring column.
-        guard joinInTree(direction, atDepth: 0), let joined = root.path(of: focused)?.first else { return false }
+        guard joinInTree(direction, atRoot: true), let joined = root.path(of: focused)?.first else { return false }
         setWidth(ofColumn: joined, share)
         reveal(focused)
         return true
