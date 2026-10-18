@@ -188,6 +188,9 @@ layout = 'master'
 
 ## `[master]`
 
+One table for every master workspace, on every display; a workspace can't have
+its own.
+
 <div class="wide-table" markdown="1">
 
 | Key | Default | |
