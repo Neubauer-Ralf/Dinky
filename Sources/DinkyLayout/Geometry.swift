@@ -51,6 +51,15 @@ public struct Layout: Equatable, Sendable {
         self.order = order
     }
 
+    /// The layout without one window, so a pass leaves it where it is, as while the user drags it.
+    public func excluding(_ id: WindowID?) -> Layout {
+        guard let id else { return self }
+        var layout = self
+        layout.frames[id] = nil
+        layout.order.removeAll { $0 == id }
+        return layout
+    }
+
     /// Equal when windows get the same frames in the same order; container rects follow from those.
     public static func == (a: Layout, b: Layout) -> Bool { a.frames == b.frames && a.order == b.order }
 }

@@ -52,6 +52,8 @@ final class Coordinator {
     var adopting: Set<WindowID> = []
     /// The tiled window being dragged with the mouse, until the button is released. See Drag.swift.
     var dragging: WindowID?
+    /// Its tile when the drag began. A tile that changes during the drag must not make the drop look like a resize.
+    var dragStart: CGRect?
     lazy var placeholders = DragPlaceholders()
     /// Called when the focused window changes.
     var onFocusChange: (() -> Void)?
@@ -409,11 +411,14 @@ final class Coordinator {
         guard var workspace = workspaces[key] else { return }
         workspace.minimumSizes = minimumSizes(in: workspace)
         workspaces[key] = workspace
-        let layout = workspace.layout()
+        // A window being dragged stays under the pointer: neither written back to its tile nor raised. With no
+        // front, the applier raises nothing of its app, which would take focus from it.
+        let layout = workspace.layout().excluding(dragging)
+        let front = workspace.focused == dragging ? nil : workspace.focused
         let pids = Dictionary(uniqueKeysWithValues: layout.order.compactMap { id in model.windows[id].map { (id, $0.pid) } })
         let write = { [weak self] in
             guard let self else { return }
-            applier.apply(layout, pids: pids, front: workspace.focused) { [weak self] results in
+            applier.apply(layout, pids: pids, front: front) { [weak self] results in
                 DispatchQueue.main.async {
                     guard let self, self.enabled else { return }
                     self.animator.noteLanded(results)
@@ -426,10 +431,8 @@ final class Coordinator {
         let snapped = snap.remove(key) != nil
         guard animates, !snapped else { return write() }
         // Stacking first, so the window coming to the front of an accordion slides in on top.
-        applier.raiseIntoOrder(layout, pids: pids, front: workspace.focused)
-        let starts = Dictionary(uniqueKeysWithValues: layout.order.compactMap { id in
-            id == dragging ? nil : model.windows[id].map { (id, $0.frame) }
-        })
+        applier.raiseIntoOrder(layout, pids: pids, front: front)
+        let starts = Dictionary(uniqueKeysWithValues: layout.order.compactMap { id in model.windows[id].map { (id, $0.frame) } })
         animator.animate(key, from: starts, to: layout.frames, pids: pids, then: write)
     }
 

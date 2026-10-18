@@ -42,6 +42,8 @@
 ### Other
 
 - The code that picks a workspace's layout algorithm from its settings moved onto `WorkspaceSettings`. Nothing changes in use.
+- A window you are dragging stays under the pointer when something else changes the layout mid-drag, such as another window opening or the Dock hiding. Before, the pass that followed wrote the dragged window back to its tile.
+- Dropping a dragged window back where it started leaves its size alone when its tile changed during the drag, such as when another window opened. Before, the drop read as dragging one edge, and resized the window into its new neighbour.
 
 ## 0.19
 

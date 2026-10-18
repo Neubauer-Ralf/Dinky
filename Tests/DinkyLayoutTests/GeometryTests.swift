@@ -159,3 +159,18 @@ struct FullscreenTests {
         #expect(ws.fullscreen == nil)
     }
 }
+
+struct LayoutExcludingTests {
+    @Test func `Excluding a window drops its frame and its place in the order`() {
+        let layout = workspace(3).layout()
+        let without = layout.excluding(2)
+        #expect(without.frames == layout.frames.filter { $0.key != 2 })
+        #expect(without.order == layout.order.filter { $0 != 2 })
+    }
+
+    @Test func `Excluding nothing or a window not laid out changes nothing`() {
+        let layout = workspace(3).layout()
+        #expect(layout.excluding(nil) == layout)
+        #expect(layout.excluding(9) == layout)
+    }
+}
