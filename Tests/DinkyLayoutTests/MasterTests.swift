@@ -4,7 +4,8 @@ import Testing
 
 /// A master workspace 1000 by 600 without gaps, windows 1...n inserted in order, so 1 is the master and n is focused.
 private func master(_ n: Int, _ side: MasterSide = .left) -> Workspace {
-    var ws = Workspace(bounds: rect(0, 0, 1000, 600), algorithm: .master(side))
+    var ws = Workspace(bounds: rect(0, 0, 1000, 600), algorithm: .master)
+    ws.setMasterSide(side)
     for id in 0..<n { ws.insert(WindowID(id + 1)) }
     return ws
 }
@@ -41,7 +42,7 @@ struct MasterGeometryTests {
     }
 
     @Test func `Gaps go between the master and the stack`() {
-        var ws = Workspace(bounds: rect(0, 0, 1000, 600), gaps: Gaps(all: 10), algorithm: .master(.left))
+        var ws = Workspace(bounds: rect(0, 0, 1000, 600), gaps: Gaps(all: 10), algorithm: .master)
         ws.insert(1)
         ws.insert(2)
         #expect(frames(ws)[1] == rect(10, 10, 582, 580))
@@ -210,7 +211,7 @@ struct MasterCommandTests {
     }
 
     @Test func `An auto-orienting accordion stack still runs top to bottom`() {
-        var ws = Workspace(bounds: rect(0, 0, 3000, 600), autoOrientAccordions: true, algorithm: .master(.left))
+        var ws = Workspace(bounds: rect(0, 0, 3000, 600), autoOrientAccordions: true, algorithm: .master)
         for id: WindowID in [1, 2, 3] { ws.insert(id) }
         ws.setLayout(.accordion, nil)
         #expect(ws.containerAxis(of: 2) == .vertical)
@@ -248,13 +249,13 @@ struct MasterCommandTests {
         var ws = Workspace(bounds: rect(0, 0, 1000, 600))
         for id: WindowID in [1, 2, 3] { ws.insert(id) }
         ws.focus(2)
-        ws.setAlgorithm(.master(.left))
+        ws.setAlgorithm(.master)
         #expect(ws.windows == [2, 1, 3], "the others stack in their order")
         #expect(ws.focused == 2)
         #expect(frames(ws)[2] == rect(0, 0, 600, 600))
         #expect(ws.container(of: 1)?.mode == .tiles, "tiled windows stack as tiles")
         ws.focus(3)
-        ws.setAlgorithm(.master(.right))
+        ws.setMasterSide(.right)
         #expect(frames(ws)[2] == rect(400, 0, 600, 600), "changing sides keeps the master")
         ws.setAlgorithm(.dwindle(.tiles))
         #expect(ws.windows == [2, 1, 3], "the master first")
@@ -265,7 +266,7 @@ struct MasterCommandTests {
         var ws = Workspace(bounds: rect(0, 0, 1000, 600), algorithm: .scrolling)
         for id: WindowID in [1, 2, 3] { ws.insert(id) }
         ws.focus(2)
-        ws.setAlgorithm(.master(.left))
+        ws.setAlgorithm(.master)
         #expect(ws.windows == [2, 1, 3])
         #expect(frames(ws)[2] == rect(0, 0, 600, 600))
         #expect(frames(ws)[1] == rect(600, 0, 400, 300))
@@ -277,7 +278,7 @@ struct MasterCommandTests {
         var ws = Workspace(bounds: rect(0, 0, 1000, 600), algorithm: .dwindle(.accordion))
         for id: WindowID in [1, 2, 3] { ws.insert(id) }
         ws.focus(1)
-        ws.setAlgorithm(.master(.left))
+        ws.setAlgorithm(.master)
         #expect(ws.windows == [1, 2, 3])
         #expect(ws.container(of: 2)?.mode == .accordion)
         #expect(ws.containerAxis(of: 2) == .vertical)
@@ -290,13 +291,13 @@ struct MasterCommandTests {
         ws.setLayout(.accordion, nil)
         #expect(ws.container(of: 3)?.mode == .accordion, "2 and 3 share an accordion beside 1")
         ws.focus(1)
-        ws.setAlgorithm(.master(.left))
+        ws.setAlgorithm(.master)
         #expect(ws.container(of: 2)?.mode == .accordion)
         var mixed = Workspace(bounds: rect(0, 0, 1000, 600))
         for id: WindowID in [1, 2, 3] { mixed.insert(id) }
         mixed.focus(2)
         mixed.setLayout(.accordion, nil)
-        mixed.setAlgorithm(.master(.left))
+        mixed.setAlgorithm(.master)
         #expect(mixed.container(of: 1)?.mode == .tiles, "one accordion window against one tiled one is no majority")
     }
 
@@ -407,13 +408,13 @@ struct MasterCommandTests {
         var ws = master(3)
         ws.setLayout(.accordion, nil)
         ws.focus(2)
-        ws.setAlgorithm(.master(.right))
+        ws.setMasterSide(.right)
         #expect(ws.masterWindow == 1)
         #expect(ws.focused == 2)
         #expect(frames(ws)[1] == rect(400, 0, 600, 600))
         #expect(ws.container(of: 2)?.mode == .accordion)
         #expect(ws.container(of: 2) == ws.container(of: 3))
-        ws.setAlgorithm(.master(.left))
+        ws.setMasterSide(.left)
         #expect(frames(ws)[1] == rect(0, 0, 600, 600))
         #expect(ws.windows == [1, 2, 3])
     }
