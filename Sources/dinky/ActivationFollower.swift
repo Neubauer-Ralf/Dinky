@@ -5,7 +5,8 @@ import DinkyPrivate
 // "switch to a Space with open windows" setting is off. Only activations the user asked for are followed.
 // macOS also activates apps on its own, and chasing those throws the user off the Space they are on:
 // - Arriving on a Space activates whatever is there (Finder on an empty one). The first activation within
-//   `arrivalWindow` of a Space change is that one.
+//   `arrivalWindow` of a Space change, counted from when the display model sees it land or dinky posts its own,
+//   is that one.
 // - When the active app quits, hides or loses its last window on the current Space, macOS activates another
 //   app. An activation within `goneWindow` of the previous app going away is that one.
 // - Opening a document activates the app before its new window exists. An app with no window on the
