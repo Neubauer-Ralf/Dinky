@@ -49,7 +49,7 @@ func frontWindowID() -> UInt32 {
     var value: CFTypeRef?
     let element = AXUIElementCreateApplication(app.processIdentifier)
     guard AXUIElementCopyAttributeValue(element, kAXFocusedWindowAttribute as CFString, &value) == .success,
-          let window = value else { return 0 }
+          let window = value, CFGetTypeID(window) == AXUIElementGetTypeID() else { return 0 }
     return axWindowID(window as! AXUIElement)
 }
 
