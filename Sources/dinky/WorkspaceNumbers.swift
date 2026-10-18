@@ -109,10 +109,7 @@ final class WorkspaceNumbers {
         if unlisted() { _ = waitUntil(2) { !unlisted() } }
         var completed = false
         for _ in 0..<50 {
-            model.reconcile()
-            let displays = model.displays.map {
-                PlanDisplay(uuid: $0.uuid, monitor: model.monitor($0), spaces: $0.userSpaces, current: $0.currentSpaceID)
-            }
+            let displays = planDisplays()
             guard !displays.isEmpty else { break }
             let occupied = occupiedSpaces(among: displays.flatMap(\.spaces))
             let before = binding
@@ -135,10 +132,7 @@ final class WorkspaceNumbers {
         case .nothing: break
         }
         // Observers hear the result once, not every step on the way.
-        if binding != start {
-            print("workspaces: " + binding.keys.sorted().map { "\($0)=\(binding[$0]!)" }.joined(separator: " "))
-            observers.forEach { $0() }
-        }
+        announce(since: start)
         fflush(stdout)
         AppState.shared.coordinator?.reconcile()
         onArranged?()
@@ -149,11 +143,7 @@ final class WorkspaceNumbers {
     /// that are gone, and started disabled there is none. A workspace the step would move stays on the Space its
     /// windows are on; one it would create stays unbound until enabling creates it.
     private func numberInPlace() {
-        let model = AppState.shared.displays
-        model.reconcile()
-        let displays = model.displays.map {
-            PlanDisplay(uuid: $0.uuid, monitor: model.monitor($0), spaces: $0.userSpaces, current: $0.currentSpaceID)
-        }
+        let displays = planDisplays()
         let start = binding
         let step = WorkspacePlan(AppState.shared.config)
             .step(displays, binding: binding, occupied: occupiedSpaces(among: displays.flatMap(\.spaces)))
@@ -161,12 +151,25 @@ final class WorkspaceNumbers {
         if case .move(let from, let to) = step.action, let n = binding.first(where: { $0.value == to })?.key {
             binding[n] = from
         }
-        if binding != start {
-            print("workspaces: " + binding.keys.sorted().map { "\($0)=\(binding[$0]!)" }.joined(separator: " "))
-            fflush(stdout)
-            observers.forEach { $0() }
-        }
+        announce(since: start)
+        fflush(stdout)
         onArranged?()
+    }
+
+    /// The displays as the plan sees them, read afresh.
+    private func planDisplays() -> [PlanDisplay] {
+        let model = AppState.shared.displays
+        model.reconcile()
+        return model.displays.map {
+            PlanDisplay(uuid: $0.uuid, monitor: model.monitor($0), spaces: $0.userSpaces, current: $0.currentSpaceID)
+        }
+    }
+
+    /// Logs the numbering and tells observers, if it changed since `start`.
+    private func announce(since start: [Int: UInt64]) {
+        guard binding != start else { return }
+        print("workspaces: " + binding.keys.sorted().map { "\($0)=\(binding[$0]!)" }.joined(separator: " "))
+        observers.forEach { $0() }
     }
 
     /// The displays connected now, as WindowServer lists them. The display model hears of a change a moment

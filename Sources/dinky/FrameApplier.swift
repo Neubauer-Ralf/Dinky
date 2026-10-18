@@ -88,15 +88,10 @@ final class FrameApplier {
     /// unless that would move focus away from a window other than `front`, the one the layout puts on top.
     /// `completion` runs on a background queue with the readback of every app touched, once written: it does
     /// not wait for the raises, which queue behind earlier passes' and can block on a hung app for seconds.
+    /// `progress` gets each app's readback as soon as that app is done, also on a background queue, so a caller
+    /// that stops waiting for a hung app still has the others.
     func apply(_ layout: Layout, pids: [WindowID: pid_t], front: WindowID? = nil,
-               completion: @escaping ([FrameResult]) -> Void = { _ in }) {
-        apply(layout, pids: pids, front: front, progress: { _ in }, completion: completion)
-    }
-
-    /// As `apply(_:pids:front:completion:)`, and `progress` gets each app's readback as soon as that app is done,
-    /// also on a background queue, so a caller that stops waiting for a hung app still has the others.
-    func apply(_ layout: Layout, pids: [WindowID: pid_t], front: WindowID? = nil,
-               progress: @escaping FrameScheduler.Completion, completion: @escaping ([FrameResult]) -> Void) {
+               progress: @escaping FrameScheduler.Completion = { _ in }, completion: @escaping ([FrameResult]) -> Void) {
         let jobs = layout.order.compactMap { id in
             pids[id].map { FrameJob(pid: $0, id: id, frame: layout.frames[id]!) }
         }
@@ -114,11 +109,10 @@ final class FrameApplier {
 
     /// Raise overlapping windows into the layout's order if they are not, as `apply` does after writing. Skipped
     /// when a pass begun after `pass` (by default, now) includes any of the layout's windows: its order is newer.
-    func raiseIntoOrder(_ layout: Layout, pids: [WindowID: pid_t], front: WindowID?, pass: Int? = nil,
-                        then done: @escaping () -> Void = {}) {
+    func raiseIntoOrder(_ layout: Layout, pids: [WindowID: pid_t], front: WindowID?, pass: Int? = nil) {
         let pass = pass ?? passes.begin(layout.order)
         raiseQueue.async { [passes] in
-            guard passes.isLatest(pass, for: layout.order) else { return done() }
+            guard passes.isLatest(pass, for: layout.order) else { return }
             var ids = layout.raises(current: onScreenOrder())
             // Raising makes a window its app's key window, so the front window goes last when its app had another
             // raised: it overlaps nothing (a column in view of a scrolling strip) and would lose focus otherwise.
@@ -126,7 +120,6 @@ final class FrameApplier {
                 ids = ids.filter { $0 != front } + [front]
             }
             if Self.raisingKeepsFocus(ids, front: front, pids: pids) { self.raise(ids, pids: pids) }
-            done()
         }
     }
 

@@ -12,20 +12,19 @@ extension Coordinator {
         // Only tiled windows have a Space. Disabled, dinky leaves drags alone.
         guard enabled, dragging == nil, let key = placements[id]?.space, !isAnimating(id), mouseButtonDown,
               let tile = workspaces[key]?.layout().frames[id] else { return }
-        dragging = id
-        dragStart = tile
+        drag = (id, tile)
         showPlaceholders()
         watchDragEnd()
     }
 
     private func watchDragEnd() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
-            guard let self, let id = self.dragging, let start = self.dragStart else { return }
+            guard let self, let (id, start) = self.drag else { return }
             if self.mouseButtonDown {
                 self.showPlaceholders()
                 self.watchDragEnd()
             } else {
-                (self.dragging, self.dragStart) = (nil, nil)
+                self.drag = nil
                 self.placeholders.hide()
                 self.dropped(id, from: start)
             }
@@ -34,8 +33,8 @@ extension Coordinator {
 
     /// Lets go of the drag under way without acting on its release, as when dinky is disabled mid-drag.
     func cancelDrag() {
-        guard dragging != nil else { return }
-        (dragging, dragStart) = (nil, nil)
+        guard drag != nil else { return }
+        drag = nil
         placeholders.hide()
     }
 
@@ -44,14 +43,12 @@ extension Coordinator {
     private func dropped(_ id: WindowID, from start: CGRect) {
         guard let key = placements[id]?.space, let layout = workspaces[key]?.layout(), let window = model.windows[id],
               let expected = layout.frames[id] else { return }
-        if !window.frame.isClose(to: start, within: 2) {
-            if let edges = movedEdges(from: start, to: window.frame) {
-                edit(key) { $0.resize(id, to: window.frame.size, moving: edges) }
-            } else if let target = dropTarget(of: id, in: layout) {
-                edit(key) { $0.swap(id, target) }
-            }
-        } else if window.frame.isClose(to: expected, within: 2) {
-            return
+        if window.frame.isClose(to: start, within: 2) {
+            guard !window.frame.isClose(to: expected, within: 2) else { return }
+        } else if let edges = movedEdges(from: start, to: window.frame) {
+            edit(key) { $0.resize(id, to: window.frame.size, moving: edges) }
+        } else if let target = dropTarget(of: id, in: layout) {
+            edit(key) { $0.swap(id, target) }
         }
         dirty.insert(key)
         flush()
@@ -59,7 +56,7 @@ extension Coordinator {
 
     /// Outline the dragged window's tile and the tile it would swap with, while the drag is a move.
     private func showPlaceholders() {
-        guard config.drag.placeholders, let id = dragging, let start = dragStart, let key = placements[id]?.space,
+        guard config.drag.placeholders, let (id, start) = drag, let key = placements[id]?.space,
               let layout = workspaces[key]?.layout(), let home = layout.frames[id], let window = model.windows[id],
               !window.frame.isClose(to: start, within: 2), movedEdges(from: start, to: window.frame) == nil
         else { return placeholders.hide() }
