@@ -115,11 +115,7 @@ public struct Config: Equatable {
                                                                 base: WorkspaceSettings(tiling: defaultTiling, layout: defaultLayout))
             }
         }
-        if t.isTable("follow-app-activation") {
-            followAppActivation = try FollowAppActivation(t.table("follow-app-activation")!)
-        } else if let enabled = try t.bool("follow-app-activation") {
-            followAppActivation.enabled = enabled
-        }
+        followAppActivation = try FollowAppActivation(t, "follow-app-activation") ?? followAppActivation
         floatWindowsWithoutFullscreen = try t.bool("float-windows-without-fullscreen") ?? floatWindowsWithoutFullscreen
         accordion = try t.table("accordion").map(Accordion.init) ?? accordion
         scrolling = try t.table("scrolling").map(Scrolling.init) ?? scrolling
@@ -321,6 +317,18 @@ public struct FollowAppActivation: Equatable {
         enabled = try t.bool("enabled") ?? enabled
         excludeApps = try t.strings("exclude-apps") ?? excludeApps
         try t.done()
+    }
+
+    /// `key` in `parent` as written, `true`, `false` or a table; nil when it is absent.
+    init?(_ parent: Table, _ key: String) throws {
+        if parent.isTable(key) {
+            try self.init(parent.table(key)!)
+        } else if let enabled = try parent.bool(key) {
+            self.init()
+            self.enabled = enabled
+        } else {
+            return nil
+        }
     }
 
     /// Whether activating the app with this bundle ID switches to its Space.
