@@ -102,25 +102,26 @@ extension Command {
     }
 
     /// Splits a command line into words at whitespace. Single or double quotes keep spaces inside a word,
-    /// as in `list-windows --format '%{app-name} | %{window-title}'`.
+    /// as in `list-windows --format '%{app-name} | %{window-title}'`. Goes by Unicode scalar, not Character:
+    /// a word starting with a combining mark would otherwise make one Character with the quote before it.
     static func words(_ line: String) -> [String] {
-        var words: [String] = [], word = "", inWord = false
-        var quote: Character?
-        for c in line {
+        var words: [String] = [], word = String.UnicodeScalarView(), inWord = false
+        var quote: Unicode.Scalar?
+        for c in line.unicodeScalars {
             if let q = quote {
                 if c == q { quote = nil } else { word.append(c) }
             } else if c == "'" || c == "\"" {
                 quote = c
                 inWord = true
-            } else if c.isWhitespace {
-                if inWord { words.append(word) }
-                (word, inWord) = ("", false)
+            } else if c.properties.isWhitespace {
+                if inWord { words.append(String(word)) }
+                (word, inWord) = (String.UnicodeScalarView(), false)
             } else {
                 word.append(c)
                 inWord = true
             }
         }
-        if inWord { words.append(word) }
+        if inWord { words.append(String(word)) }
         return words
     }
 
@@ -128,9 +129,16 @@ extension Command {
     /// the same. `exec-and-forget` is shell text and is passed as written.
     public static func line(_ args: [String]) -> String {
         guard args.first != "exec-and-forget" else { return args.joined(separator: " ") }
+        // By Unicode scalar, as `words` reads it.
         return args.map { word in
-            guard word.isEmpty || word.contains(where: { $0.isWhitespace || $0 == "'" || $0 == "\"" }) else { return word }
-            return word.contains("'") ? "\"\(word)\"" : "'\(word)'"
+            let scalars = word.unicodeScalars
+            guard word.isEmpty || scalars.contains(where: { $0.properties.isWhitespace || $0 == "'" || $0 == "\"" })
+            else { return word }
+            if !scalars.contains("'") { return "'\(word)'" }
+            if !scalars.contains("\"") { return "\"\(word)\"" }
+            // Both kinds: single-quoted runs, each ' written as "'" between them. Adjacent runs make one word.
+            let runs = scalars.split(separator: "'", omittingEmptySubsequences: false).map { String(String.UnicodeScalarView($0)) }
+            return "'" + runs.joined(separator: "'\"'\"'") + "'"
         }.joined(separator: " ")
     }
 
