@@ -193,7 +193,7 @@ layout = 'master'
 | Key | Default | |
 |---|---|---|
 | `size` | `0.6` | The master's share of the display inside the outer gaps while windows are stacked beside it, from `0.1` to `0.9`. Hyprland calls it `mfact`. It applies to a stack opened later and to `balance-sizes`. |
-| `orientation` | `'left'` | The side the master takes: `'left'` or `'right'`. The stack goes on the other. |
+| `side` | `'left'` | The side the master takes: `'left'` or `'right'`. The stack goes on the other. Hyprland calls it `orientation`. |
 
 </div>
 
@@ -435,7 +435,7 @@ column-width = 0.49             # a new column's share of the display; a lone co
 
 [master]
 size = 0.6                      # the master's share of the display beside the stack; alone it fills it
-orientation = 'left'            # left | right: the master's side
+side = 'left'                   # left | right: the master's side
 
 [gaps]
 inner = 8                       # or { horizontal = 8, vertical = 8 }

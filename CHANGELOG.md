@@ -4,7 +4,7 @@
 
 ### Tiling
 
-- New `master` layout, after Hyprland's: one window, the master, takes 0.6 of the display (`[master] size`) on the left or right (`[master] orientation`) and the others stack beside it. The first window fills the display alone, the second opens the stack and later ones join its bottom. When the master closes, the top of the stack takes its place; when the stack empties, the master fills the display again. `layout tiles accordion` toggles the stack between tiles and an accordion from any window.
+- New `master` layout, after Hyprland's: one window, the master, takes 0.6 of the display (`[master] size`) on the left or right (`[master] side`) and the others stack beside it. The first window fills the display alone, the second opens the stack and later ones join its bottom. When the master closes, the top of the stack takes its place; when the stack empties, the master fills the display again. `layout tiles accordion` toggles the stack between tiles and an accordion from any window.
 - `layout master` switches the focused workspace to the master layout, making the focused window the master and stacking the others as they were shown, tiled or in an accordion. `layout dwindle` switches a master or scrolling workspace back to its tree. Both are in the Layout menu.
 - New `swap-with-master` command, Hyprland's `swapwithmaster`: swaps the focused window with the master, or the master with the top of the stack.
 

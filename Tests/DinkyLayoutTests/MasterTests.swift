@@ -3,8 +3,8 @@ import Testing
 @testable import DinkyLayout
 
 /// A master workspace 1000 by 600 without gaps, windows 1...n inserted in order, so 1 is the master and n is focused.
-private func master(_ n: Int, _ orientation: MasterOrientation = .left, size: Double = 0.6) -> Workspace {
-    var ws = Workspace(bounds: rect(0, 0, 1000, 600), algorithm: .master(orientation))
+private func master(_ n: Int, _ side: MasterSide = .left, size: Double = 0.6) -> Workspace {
+    var ws = Workspace(bounds: rect(0, 0, 1000, 600), algorithm: .master(side))
     ws.masterSize = size
     for id in 0..<n { ws.insert(WindowID(id + 1)) }
     return ws
@@ -34,7 +34,7 @@ struct MasterGeometryTests {
         #expect(f[4] == rect(600, 400, 400, 200))
     }
 
-    @Test func `The right orientation puts the master on the right`() {
+    @Test func `The right side puts the master on the right`() {
         let f = frames(master(3, .right))
         #expect(f[1] == rect(400, 0, 600, 600))
         #expect(f[2] == rect(0, 0, 400, 300))

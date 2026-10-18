@@ -7,7 +7,7 @@ public enum TilingAlgorithm: Equatable, Sendable {
     /// A strip of columns wider than the screen, scrolled to the focused one. See Scrolling.swift.
     case scrolling
     /// A master window on one side and a stack of the others beside it. See Master.swift.
-    case master(MasterOrientation)
+    case master(MasterSide)
 }
 
 public enum FixedExpansion: Equatable, Sendable {

@@ -9,7 +9,7 @@
 // fixed template: windows then open beside the focused one until `flatten-workspace-tree` rebuilds the shape.
 
 /// The side of the screen the master window takes.
-public enum MasterOrientation: Equatable, Sendable {
+public enum MasterSide: Equatable, Sendable {
     case left, right
 }
 
