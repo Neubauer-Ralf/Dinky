@@ -103,19 +103,23 @@ extension Command {
         }
     }
 
+    /// The quoting rule `words` reads and `line` writes, by Unicode scalar rather than Character: a word starting
+    /// with a combining mark would otherwise make one Character with the quote before it.
+    private static func isSpace(_ c: Unicode.Scalar) -> Bool { c.properties.isWhitespace }
+    private static func isQuote(_ c: Unicode.Scalar) -> Bool { c == "'" || c == "\"" }
+
     /// Splits a command line into words at whitespace. Single or double quotes keep spaces inside a word,
-    /// as in `list-windows --format '%{app-name} | %{window-title}'`. Goes by Unicode scalar, not Character:
-    /// a word starting with a combining mark would otherwise make one Character with the quote before it.
+    /// as in `list-windows --format '%{app-name} | %{window-title}'`.
     static func words(_ line: String) -> [String] {
         var words: [String] = [], word = String.UnicodeScalarView(), inWord = false
         var quote: Unicode.Scalar?
         for c in line.unicodeScalars {
             if let q = quote {
                 if c == q { quote = nil } else { word.append(c) }
-            } else if c == "'" || c == "\"" {
+            } else if isQuote(c) {
                 quote = c
                 inWord = true
-            } else if c.properties.isWhitespace {
+            } else if isSpace(c) {
                 if inWord { words.append(String(word)) }
                 (word, inWord) = (String.UnicodeScalarView(), false)
             } else {
@@ -131,11 +135,9 @@ extension Command {
     /// the same. `exec-and-forget` is shell text and is passed as written.
     public static func line(_ args: [String]) -> String {
         guard args.first != "exec-and-forget" else { return args.joined(separator: " ") }
-        // By Unicode scalar, as `words` reads it.
         return args.map { word in
             let scalars = word.unicodeScalars
-            guard word.isEmpty || scalars.contains(where: { $0.properties.isWhitespace || $0 == "'" || $0 == "\"" })
-            else { return word }
+            guard word.isEmpty || scalars.contains(where: { isSpace($0) || isQuote($0) }) else { return word }
             if !scalars.contains("'") { return "'\(word)'" }
             if !scalars.contains("\"") { return "\"\(word)\"" }
             // Both kinds: single-quoted runs, each ' written as "'" between them. Adjacent runs make one word.
