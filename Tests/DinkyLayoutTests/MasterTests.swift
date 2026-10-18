@@ -3,9 +3,8 @@ import Testing
 @testable import DinkyLayout
 
 /// A master workspace 1000 by 600 without gaps, windows 1...n inserted in order, so 1 is the master and n is focused.
-private func master(_ n: Int, _ side: MasterSide = .left, size: Double = 0.6) -> Workspace {
+private func master(_ n: Int, _ side: MasterSide = .left) -> Workspace {
     var ws = Workspace(bounds: rect(0, 0, 1000, 600), algorithm: .master(side))
-    ws.masterSize = size
     for id in 0..<n { ws.insert(WindowID(id + 1)) }
     return ws
 }
