@@ -41,3 +41,21 @@ struct FailedRestoresTests {
         #expect(failed.ids.isEmpty)
     }
 }
+
+struct RestoreProblemTests {
+    @Test func `Only what passes is tried again`() {
+        #expect(RestoreProblem.noAnswer(seconds: 3).retries)
+        #expect(RestoreProblem.displayGone.retries)
+        #expect(RestoreProblem.spaceMoveFailed.retries)
+        #expect(RestoreProblem.didNotArrive.retries)
+    }
+
+    @Test func `A window that answers wrongly every time is not kept for the next launch`() {
+        let wanted = rect(0, 0, 800, 600)
+        #expect(!RestoreProblem.unreadable(wanted: wanted).retries)
+        #expect(!RestoreProblem.wrongFrame(got: rect(0, 0, 900, 600), wanted: wanted).retries, "held by a minimum size")
+        #expect(!RestoreProblem.closed.retries)
+        #expect(!RestoreProblem.spaceGone.retries)
+        #expect(!RestoreProblem.movedByHand.retries)
+    }
+}

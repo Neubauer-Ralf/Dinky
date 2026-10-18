@@ -77,10 +77,12 @@ final class AppState {
     @discardableResult
     func setEnabled(_ on: Bool) -> String {
         if on { recovery.resume() }
+        let wasOn = enabled
         enabled = on
         propagateEnabled()
-        // Displays may have come or gone while off, when arranging is skipped.
-        if on, coordinator != nil { numbers.arrange() }
+        // Displays may have come or gone while off, when arranging only numbers the Spaces. Already on, they are
+        // arranged, and arranging blocks the main thread.
+        if on, !wasOn, coordinator != nil { numbers.arrange() }
         return on ? "" : recovery.restore()
     }
 
