@@ -86,15 +86,22 @@ class Fuzzer:
 
     def run(self, *cmd):
         self.history.append(" ".join(str(c) for c in cmd))
-        return subprocess.run([str(c) for c in cmd], capture_output=True, text=True, timeout=20).returncode == 0
+        try:
+            return subprocess.run([str(c) for c in cmd], capture_output=True, text=True, timeout=20).returncode == 0
+        except subprocess.TimeoutExpired:
+            self.history.append("(no answer within 20 s)")
+            return False
 
     def cli(self, *args):
         return self.run(self.dinky, *args)
 
     def state(self):
         """`dinky debug-state`, with each display's workspaces (their Spaces, by number) listed on it. The VM has one
-        display, so a workspace's place in that list plus one is its number."""
-        out = subprocess.run([self.dinky, "debug-state"], capture_output=True, text=True, timeout=10)
+        display, so a workspace's place in that list plus one is its number. None when the app is gone or hung."""
+        try:
+            out = subprocess.run([self.dinky, "debug-state"], capture_output=True, text=True, timeout=10)
+        except subprocess.TimeoutExpired:
+            return None
         if out.returncode != 0: return None
         s = json.loads(out.stdout)
         numbered = sorted(s["workspaces"].items(), key=lambda item: int(item[0]))
@@ -233,7 +240,9 @@ class Fuzzer:
         tile, twin = self.rng.choice(pairs)
         self.cli("debug", "ax-minimize", twin["id"])
         time.sleep(1)
-        frame = next((w["live-frame"] for w in self.state()["windows"] if w["id"] == tile["id"]), None)
+        now = self.state()
+        if now is None: return True  # the step goes on, and the state after it reports the app gone
+        frame = next((w["live-frame"] for w in now["windows"] if w["id"] == tile["id"]), None)
         if frame: self.cli("debug", "ax-frame", twin["id"], *[int(v) for v in frame])
         return self.cli("debug", "ax-unminimize", twin["id"])
 
@@ -330,7 +339,10 @@ class Fuzzer:
                 v[("j-minimum", int(id))] = f"window {id} has minimum size {size}, nearly the display ({area[2]}x{area[3]})"
         if s["dragging"]:
             v[("k-dragging", s["dragging"])] = f"dinky still thinks window {s['dragging']} is being dragged"
-        out = subprocess.run([self.dinky, "list-workspaces", "--focused"], capture_output=True, text=True).stdout.strip()
+        try:
+            out = subprocess.run([self.dinky, "list-workspaces", "--focused"], capture_output=True, text=True, timeout=10).stdout.strip()
+        except subprocess.TimeoutExpired:
+            out = ""  # hung: the next state() reports the app gone
         d = s["displays"][0]
         if out.isdigit() and d["workspaces"][int(out) - 1] != d["current-space"]:
             v[("f-focused-workspace", 0)] = f"list-workspaces --focused says {out}, the display is on Space {d['current-space']}"
@@ -364,20 +376,28 @@ class Fuzzer:
         print("  diff:\n    " + "\n    ".join(diff(before, after) or ["(none)"]))
 
     def setup(self):
-        """No TextEdit windows (nothing restored), no Finder or Safari windows on any workspace, on workspace 1."""
+        """No TextEdit windows (nothing restored), no Finder or Safari windows on any workspace, on workspace 1.
+        False when the app is gone."""
         subprocess.run(["pkill", "-x", "TextEdit"])
         subprocess.run(["defaults", "write", "com.apple.TextEdit", "NSQuitAlwaysKeepsWindows", "-bool", "false"])
         subprocess.run(["defaults", "write", "com.apple.TextEdit", "ApplePersistenceIgnoreState", "-bool", "true"])
         subprocess.run(["rm", "-rf", DOCS])
         os.makedirs(DOCS)
-        for n in range(1, len(self.state()["displays"][0]["workspaces"]) + 1):
+        s = self.state()
+        if s is None: return False
+        for n in range(1, len(s["displays"][0]["workspaces"]) + 1):
             self.cli("workspace", n)
             time.sleep(0.5)
-            for w in self.visible(self.state()): self.cli("debug", "ax-close", w["id"])
+            if (s := self.state()) is None: return False
+            for w in self.visible(s): self.cli("debug", "ax-close", w["id"])
         self.cli("workspace", 1)
         time.sleep(1)
-        for _ in range(MIN_WINDOWS): self.open_doc(self.state()); time.sleep(1.5)
+        for _ in range(MIN_WINDOWS):
+            if (s := self.state()) is None: return False
+            self.open_doc(s)
+            time.sleep(1.5)
         time.sleep(1)
+        return True
 
     def settle(self):
         """Waits 1.5 s for the state to settle, polling the display's Space; the state after, and the Spaces seen."""
@@ -390,9 +410,16 @@ class Fuzzer:
             if not seen or seen[-1] != space: seen.append(space)
         return s, seen
 
+    def died(self, step):
+        self.found["app-died"] = 1
+        print(f"\n=== VIOLATION seed {self.seed} step {step}: the app is gone or not answering (debug-state failed)")
+        print("  last actions:\n    " + "\n    ".join(self.history[-10:]))
+
     def fuzz(self, steps):
-        self.setup()
-        s = self.state()
+        s = self.state() if self.setup() else None
+        if s is None:
+            self.died(0)
+            return 1
         weights, actions = zip(*(self.SWITCHING_ACTIONS if self.switching else self.ACTIONS))
         for step in range(1, steps + 1):
             start = len(self.history)
@@ -404,9 +431,7 @@ class Fuzzer:
             after = self.state()
             idle, spaces = self.settle()
             if after is None or idle is None:
-                self.found["app-died"] = 1
-                print(f"\n=== VIOLATION seed {self.seed} step {step}: the app is gone (no socket)")
-                print("  last actions:\n    " + "\n    ".join(self.history[-10:]))
+                self.died(step)
                 break
             checked = self.check(idle)
             late = self.check(after).keys() - checked.keys()
