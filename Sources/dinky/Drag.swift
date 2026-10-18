@@ -43,14 +43,12 @@ extension Coordinator {
     private func dropped(_ id: WindowID, from start: CGRect) {
         guard let key = placements[id]?.space, let layout = workspaces[key]?.layout(), let window = model.windows[id],
               let expected = layout.frames[id] else { return }
-        if !window.frame.isClose(to: start, within: 2) {
-            if let edges = movedEdges(from: start, to: window.frame) {
-                edit(key) { $0.resize(id, to: window.frame.size, moving: edges) }
-            } else if let target = dropTarget(of: id, in: layout) {
-                edit(key) { $0.swap(id, target) }
-            }
-        } else if window.frame.isClose(to: expected, within: 2) {
-            return
+        if window.frame.isClose(to: start, within: 2) {
+            guard !window.frame.isClose(to: expected, within: 2) else { return }
+        } else if let edges = movedEdges(from: start, to: window.frame) {
+            edit(key) { $0.resize(id, to: window.frame.size, moving: edges) }
+        } else if let target = dropTarget(of: id, in: layout) {
+            edit(key) { $0.swap(id, target) }
         }
         dirty.insert(key)
         flush()
