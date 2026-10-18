@@ -38,6 +38,7 @@
 - One app that stops responding while windows are being put back no longer spoils the report for the others. Before, every window counted as not restored when any app took longer than 3 seconds.
 - Windows moved since a display was plugged in or out stay where you put them. Before, when arranging the workspaces right after the display change stopped short, a later config reload sent windows back to where they had been before that change.
 - Turning dinky back on leaves windows where you put them after a display was plugged in or out while it was off. Before, enabling it, hours later perhaps, sent them back to where they were before the display change.
+- Focus borders show up on the Space you switch to when macOS sends dinky no event for the switch, as with some swipes another app posts. Before, dinky noticed the new Space from its poll or a workspace notification but went on drawing borders for the old one, so windows on the new Space had none until something else redrew them (#30).
 
 ### Other
 
