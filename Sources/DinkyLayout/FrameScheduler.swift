@@ -79,9 +79,20 @@ public final class FrameScheduler: @unchecked Sendable {
     /// Queue frames. `completion` gets the results of every process queue these jobs went to,
     /// once each has written them (or newer frames for the same windows).
     public func submit(_ jobs: [FrameJob], completion: Completion? = nil) {
+        enqueue(jobs, progress: nil, completion: completion)
+    }
+
+    /// Queue frames as `submit(_:completion:)` does, and also hand each process queue's results to `progress`
+    /// as soon as that queue is done, before `completion`: a caller that cannot wait for a hung app still learns
+    /// about the others. Neither takes a default, so a lone trailing closure always picks the other overload.
+    public func submit(_ jobs: [FrameJob], progress: @escaping Completion, completion: @escaping Completion) {
+        enqueue(jobs, progress: progress, completion: completion)
+    }
+
+    private func enqueue(_ jobs: [FrameJob], progress: Completion?, completion: Completion?) {
         let byPid = Dictionary(grouping: jobs, by: \.pid)
         guard !byPid.isEmpty else { completion?([]); return }
-        let batch = Batch(waiting: byPid.count, completion)
+        let batch = Batch(waiting: byPid.count, progress: progress, completion: completion)
         lock.withLock {
             for (pid, jobs) in byPid {
                 let app = app(pid)
@@ -308,19 +319,23 @@ public final class FrameScheduler: @unchecked Sendable {
         }
     }
 
-    /// Collects results from each process queue a submit went to, then calls its completion.
+    /// Collects results from each process queue a submit went to, passing each on to its progress, then calls
+    /// its completion.
     private final class Batch {
         private let lock = NSLock()
         private var waiting: Int
         private var results: [FrameResult] = []
+        private let progress: Completion?
         private let completion: Completion?
 
-        init(waiting: Int, _ completion: Completion?) {
+        init(waiting: Int, progress: Completion?, completion: Completion?) {
             self.waiting = waiting
+            self.progress = progress
             self.completion = completion
         }
 
         func report(_ new: [FrameResult]) {
+            progress?(new)
             let done: [FrameResult]? = lock.withLock {
                 results += new
                 waiting -= 1

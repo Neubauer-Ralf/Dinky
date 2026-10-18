@@ -4,7 +4,8 @@ import DinkyPrivate
 
 // Restore on disable and quit, and crash recovery. Before dinky tiles a window, its original frame and
 // Space are journaled once and saved to disk, so a crash leaves them behind. Disabling or quitting puts
-// every journaled window back. After a crash, the next launch keeps the entries whose windows still
+// every journaled window back; one it could not put back stays journaled for the next try, unless it is moved
+// by hand meanwhile (see FailedRestores). After a crash, the next launch keeps the entries whose windows still
 // exist with the same owner and offers to restore them. Main thread only.
 final class Recovery {
     struct Entry: Codable {
@@ -27,20 +28,28 @@ final class Recovery {
     static let url = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Library/Application Support/dinky/journal.json")
 
+    /// Restore problems no retry can fix. Every other failed window stays journaled for the next restore.
+    private static let closed = "closed"
+    private static let spaceGone = "its Space is gone"
+    private static let movedByHand = "moved by hand since the last try, leaving it there"
+    /// How long a restore waits for apps to take their frames. A hung app must not hold up quitting for long.
+    private static let answerTimeout: TimeInterval = 3
+
     /// Windows left behind by a session that crashed, still journaled.
     var recoverable: Int { carried.filter { entries[$0] != nil }.count }
 
     private let launched = Date()
     private var entries: [UInt32: Entry] = [:]
     private var carried: Set<UInt32> = []
+    private var failed = FailedRestores()
     private var model: WindowModel?
     private var recording = false
     private var saveScheduled = false
     private var applier: FrameApplier!
 
-    /// Carries over a crashed session's journal, then journals windows as the model sees them, so each frame is
-    /// the one the model read before dinky wrote any. Restores write through the coordinator's applier, so the
-    /// minimum sizes it learns have one owner.
+    /// Carries over a crashed session's journal and follows the model, so once `resume()` turns journaling on,
+    /// each frame is the one the model read before dinky wrote any. Restores write through the coordinator's
+    /// applier, so the minimum sizes it learns have one owner.
     func start(model: WindowModel, applier: FrameApplier) {
         self.model = model
         self.applier = applier
@@ -48,17 +57,21 @@ final class Recovery {
         model.observe { [weak self] _ in self?.record() }
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.activeSpaceDidChangeNotification,
                                                           object: nil, queue: .main) { [weak self] _ in self?.record() }
-        resume()
     }
 
-    /// Journals windows from now on. Call before tiling (re)starts.
+    /// Journals windows from now on. Call before tiling (re)starts. A window a restore could not put back and
+    /// that was moved by hand since is journaled again from where it is now.
     func resume() {
         recording = true
+        for id in failed.ids where failed.movedByHand(id, now: position(of: id)) { entries[id] = nil }
+        failed.clear()
         record()
     }
 
     /// Stops journaling, moves every journaled window back to its Space, writes its frame, and forgets the
-    /// journal. Blocks until the frames are written. Returns a summary; what could not be restored is logged.
+    /// windows put back or gone for good. The rest stay journaled, on disk too, so the next restore or a
+    /// `dinky recover` after relaunching tries them again. Blocks until the frames are written. Returns a
+    /// summary; what could not be restored is logged.
     @discardableResult
     func restore() -> String {
         recording = false
@@ -68,15 +81,21 @@ final class Recovery {
         var problems: [UInt32: String] = [:]  // by window id
         let live = entries.values.sorted { $0.id < $1.id }.filter { entry in
             guard model.windows[entry.id]?.identity == entry.identity else {
-                problems[entry.id] = "closed"
+                problems[entry.id] = Self.closed
+                return false
+            }
+            let now = position(of: entry.id)
+            // Already in place, possibly on a Space AX cannot reach; or a late answer from an app a try gave up on.
+            if now == WindowPosition(frame: entry.frame, spaceID: entry.spaceID) { return false }
+            if failed.movedByHand(entry.id, now: now) {
+                problems[entry.id] = Self.movedByHand
                 return false
             }
             guard displays.displays.contains(where: { $0.frame.intersects(entry.frame) }) else {
                 problems[entry.id] = "its display is gone"
                 return false
             }
-            // Already in place, possibly on a Space AX cannot reach.
-            return dinky_window_info(entry.id).frame != entry.frame || dinky_window_space_id(entry.id) != entry.spaceID
+            return true
         }
         // Frames first while windows are on screen, then Spaces, then frames again for windows that
         // came back onto a visible Space: AX only reaches windows on a Space that is on screen.
@@ -84,14 +103,22 @@ final class Recovery {
         let moved = moveBack(live, problems: &problems)
         for (id, result) in writeFrames(live.filter { moved.contains($0.id) }) { results[id] = result }
         for entry in live where results[entry.id]?.matched != true && problems[entry.id] == nil {
-            let got = results[entry.id]?.got.map { "\($0)" } ?? "unreachable"
-            problems[entry.id] = "frame \(got), wanted \(entry.frame)"
+            let outcome = switch results[entry.id] {
+            case nil: "no answer within \(Int(Self.answerTimeout)) s"
+            case let result?: result.got.map { "frame \($0)" } ?? "unreadable"
+            }
+            problems[entry.id] = "\(outcome), wanted \(entry.frame)"
         }
-        for (id, problem) in problems.sorted(by: { $0.key < $1.key }) { fputs("recovery: window \(id): \(problem)\n", stderr) }
+        let retry = problems.filter { ![Self.closed, Self.spaceGone, Self.movedByHand].contains($0.value) }
+        for (id, problem) in problems.sorted(by: { $0.key < $1.key }) {
+            fputs("recovery: window \(id): \(problem)\(retry[id] == nil ? "" : ", kept to try again")\n", stderr)
+        }
         let summary = "restored \(entries.count - problems.count) of \(entries.count) windows"
             + (problems.isEmpty ? "" : ", see the log for the rest")
-        entries = [:]
-        carried = []
+        entries = entries.filter { retry[$0.key] != nil }
+        carried.formIntersection(entries.keys)
+        failed.keep(Set(retry.keys))
+        for id in retry.keys { failed.remember(id, at: position(of: id)) }
         save()
         print("recovery: \(summary)")
         fflush(stdout)
@@ -166,20 +193,34 @@ final class Recovery {
 
     // MARK: Restoring
 
-    /// Writes the entries' frames, in the current stacking order so nothing is raised. Waits for the results.
+    /// Where the window server has a window now.
+    private func position(of id: UInt32) -> WindowPosition {
+        WindowPosition(frame: dinky_window_info(id).frame, spaceID: dinky_window_space_id(id))
+    }
+
+    /// Writes the entries' frames, in the current stacking order so nothing is raised. Waits for the results, up
+    /// to `answerTimeout`; an app that has not answered by then has no results, and the other apps still do.
     private func writeFrames(_ entries: [Entry]) -> [UInt32: FrameResult] {
         guard !entries.isEmpty else { return [:] }
         let stacking = Dictionary(onScreenOrder().enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
         let layout = Layout(frames: Dictionary(uniqueKeysWithValues: entries.map { ($0.id, $0.frame) }),
                             order: entries.map(\.id).sorted { (stacking[$0] ?? .max) < (stacking[$1] ?? .max) })
+        let results = Results()
         let done = DispatchSemaphore(value: 0)
-        var results: [FrameResult] = []
-        applier.apply(layout, pids: Dictionary(uniqueKeysWithValues: entries.map { ($0.id, $0.pid) })) {
-            results = $0
-            done.signal()
-        }
-        _ = done.wait(timeout: .now() + 3)
-        return Dictionary(results.map { ($0.job.id, $0) }, uniquingKeysWith: { $1 })
+        applier.apply(layout, pids: Dictionary(uniqueKeysWithValues: entries.map { ($0.id, $0.pid) }),
+                      progress: results.add) { _ in done.signal() }
+        _ = done.wait(timeout: .now() + Self.answerTimeout)
+        return results.byID
+    }
+
+    /// Readbacks as each app reports them. They arrive on background queues, a hung app's possibly after the
+    /// restore stopped waiting, so they are only touched under the lock.
+    private final class Results: @unchecked Sendable {
+        private let lock = NSLock()
+        private var results: [UInt32: FrameResult] = [:]
+
+        func add(_ new: [FrameResult]) { lock.withLock { for result in new { results[result.job.id] = result } } }
+        var byID: [UInt32: FrameResult] { lock.withLock { results } }
     }
 
     /// Moves windows that are off their original Space back onto it, if it still exists. Returns the ids that arrived.
@@ -189,7 +230,7 @@ final class Recovery {
         for entry in entries where entry.spaceID != 0 && dinky_window_space_id(entry.id) != entry.spaceID {
             var ids = [entry.id]
             if displays.display(containingSpace: entry.spaceID) == nil {
-                problems[entry.id] = "its Space is gone"
+                problems[entry.id] = Self.spaceGone
             } else if dinky_move_windows_to_space(&ids, 1, entry.spaceID) {
                 targets[entry.id] = entry.spaceID
             } else {

@@ -7,9 +7,10 @@ import DinkyPrivate
 
 extension Coordinator {
     /// Records the display that had focus as a new window's, the first time it shows: the focused display, or the
-    /// one focused before the window if it already took focus. Windows open before dinky started stay where they are.
+    /// one focused before the window if it already took focus. Windows open before dinky started, or that opened
+    /// while it was disabled, stay where they are.
     func noteFirstShowing(_ window: Window) {
-        guard window.identity.firstSeen > model.seededAt else { return }
+        guard window.identity.firstSeen > max(model.seededAt, enabledSince) else { return }
         adoptTargets[window.id] = lastFocused == window.id ? displayBeforeFocus : displays.focusedDisplay(window: lastFocused)?.uuid
     }
 

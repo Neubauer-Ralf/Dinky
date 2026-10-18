@@ -56,12 +56,18 @@ final class AppState {
         guard coordinator == nil else { return }
         let coordinator = Coordinator(displays: displays, config: config)
         self.coordinator = coordinator
-        coordinator.start()
+        // A disable sent before Accessibility was granted had no coordinator to reach.
+        coordinator.enabled = enabled
+        // Journal the frames the model read before the first arrange writes any. Disabled, nothing is tiled, so
+        // nothing is journaled until enabling resumes it; a restore on quit would move windows dinky never touched.
+        coordinator.start {
+            recovery.start(model: coordinator.model, applier: coordinator.applier)
+            if enabled { recovery.resume() }
+        }
         // Once the windows are known, so each workspace's windows move with it, and before the hooks, which
         // report workspace numbers.
         numbers.arrange()
         hooks.start()
-        recovery.start(model: coordinator.model, applier: coordinator.applier)
         hoverFocus.update(config: config.focusFollowsMouse)
     }
 
@@ -73,6 +79,8 @@ final class AppState {
         if on { recovery.resume() }
         enabled = on
         propagateEnabled()
+        // Displays may have come or gone while off, when arranging is skipped.
+        if on, coordinator != nil { numbers.arrange() }
         return on ? "" : recovery.restore()
     }
 

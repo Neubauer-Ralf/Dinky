@@ -205,6 +205,25 @@ struct FrameSchedulerTests {
         #expect(results.map(\.retried) == [false])
     }
 
+    @Test func `Progress reports each process before a busy one finishes`() {
+        let fake = FakeWindows()
+        let hold = DispatchSemaphore(value: 0)
+        fake.holds[10] = hold
+        let lock = NSLock()
+        var reported: [FrameResult] = []
+        let progressed = DispatchSemaphore(value: 0), done = DispatchSemaphore(value: 0)
+        fake.scheduler().submit([job(1, 10, 0), job(2, 20, 0)],
+                                progress: { results in lock.withLock { reported += results }; progressed.signal() },
+                                completion: { _ in done.signal() })
+        #expect(progressed.wait(timeout: .now() + 2) == .success)
+        #expect(lock.withLock { reported.map(\.job.id) } == [20])
+        #expect(lock.withLock { reported.map(\.matched) } == [true])
+        #expect(done.wait(timeout: .now() + 0.1) == .timedOut)
+        hold.signal()
+        #expect(done.wait(timeout: .now() + 2) == .success)
+        #expect(lock.withLock { reported.map(\.job.id).sorted() } == [10, 20])
+    }
+
     @Test func `Completion waits for every process`() {
         let fake = FakeWindows()
         let results = submitAndWait(fake.scheduler(), [job(1, 10, 0), job(2, 20, 0), job(3, 30, 0)])
