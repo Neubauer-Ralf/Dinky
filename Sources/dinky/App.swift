@@ -56,7 +56,6 @@ final class DinkyApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.button?.font = NSFont.monospacedDigitSystemFont(ofSize: 13, weight: .bold)
         statusItem.menu = NSMenu()
         statusItem.menu?.delegate = self
-        _ = AppState.shared.hotkeys.start()
         // First, so the follower sees every Space change from here on, the first arrangement's included.
         installActivationFollower()
         AppState.shared.startCoordinator()

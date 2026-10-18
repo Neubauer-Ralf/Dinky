@@ -259,10 +259,9 @@ static bool legacy_post_swipe(double sign, bool last)
     return true;
 }
 
-// mimi mimiPostAugmentedDockSwipe, or the legacy swipe before macOS 27. sign is +1 toward higher Space indices.
-static bool mimi_post_swipe(double sign, bool last)
+// mimi mimiPostAugmentedDockSwipe. sign is +1 toward higher Space indices.
+static bool mimi_post_swipe(double sign)
 {
-    if (!requires_augmentation()) return legacy_post_swipe(sign, last);
     double rawSign = augmented_sign(sign);
     static const int phases[] = {kPhaseBegan, kPhaseChanged, kPhaseEnded};
     for (size_t i = 0; i < sizeof(phases) / sizeof(phases[0]); i++) {
@@ -321,8 +320,11 @@ static bool mimi_post_swipes(double sign, int count, CGDirectDisplayID displayID
         pump(kMimiStepDelay);  // mimi waits this long after its warp too
     }
 
+    bool augmented = requires_augmentation();
     bool posted = true;
-    for (int i = 0; i < count && posted; i++) posted = mimi_post_swipe(sign, i == count - 1);
+    for (int i = 0; i < count && posted; i++) {
+        posted = augmented ? mimi_post_swipe(sign) : legacy_post_swipe(sign, i == count - 1);
+    }
 
     if (warp) {
         pump(kMimiStepDelay);  // let the swipes land before the cursor leaves the display
