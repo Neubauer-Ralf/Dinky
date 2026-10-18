@@ -10,11 +10,6 @@
 - `dinky doctor` says dinky is developed and tested on macOS 27. Before, it claimed every build was built against 27.0, whichever SDK built it.
 - When dinky can't listen to the keyboard, as can happen right after Accessibility is granted, it keeps trying and the menu bar shows `!` with a menu line saying the key bindings are off. Before, the bindings stayed dead until dinky restarted, with nothing to say so.
 
-### Other
-
-- The workflow that publishes the website runs its actions pinned to commits instead of movable tags.
-- The fuzzer reports an app that died or stopped answering as a violation, with the seed and step, instead of ending in a traceback or hanging.
-
 ## 0.19
 
 ### Tiling
