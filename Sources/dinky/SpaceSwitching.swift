@@ -86,7 +86,7 @@ final class SpaceSwitcher {
         flight.posted = flight.target
         flight.postedAt = uptime()
         flights[uuid] = flight
-        noteOwnSwitch(to: flight.target, on: uuid)
+        noteOwnSwitch()
         posting = true
         let ok = dinky_switch_to_space_index(Int32(from + 1), Int32(to + 1), uuid as CFString)
         posting = false

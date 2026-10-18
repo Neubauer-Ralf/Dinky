@@ -17,6 +17,7 @@
 - A `dinky.toml` that is a symlink reloads when the link itself is replaced, as `ln -sf` or a dotfiles tool does it. Before, dinky went on watching the file the old link pointed to.
 - Saving `dinky.toml` reloads it promptly even while other files in its folder keep changing. Before, a change to any file in the folder pushed the reload back, so a busy folder could hold it off for as long as it stayed busy.
 - dinky stops watching the config for good when it stops. Before, a watch stopped while `dinky.toml` was missing came back once the file appeared, and reported a reload.
+- Switching to an empty workspace stays there with app activation following on. Before, on a Mac where the switch took longer than 300 ms to land, such as an Intel Mac before macOS 27, Finder's activation on arrival was taken for one you asked for, and dinky followed it straight back to the workspace you left.
 
 ## 0.19
 

@@ -61,8 +61,8 @@ func frontWindowID() -> UInt32 {
 func focusWindow(pid: pid_t, id: UInt32) {
     // Focus is on a window again, even when it is the one that had it before a `focus-monitor`.
     AppState.shared.displays.focusOverride = nil
-    if let display = AppState.shared.displays.display(ofWindow: id) {
-        noteOwnSwitch(to: display.currentSpaceID, on: display.uuid)
+    if AppState.shared.displays.display(ofWindow: id) != nil {
+        noteOwnSwitch()
     }
     if let element = axWindow(pid: pid, wid: id, timeout: FrameApplier.timeout) {
         // Raise alone makes the window main; the app's key window can stay one on another Space, and the
@@ -91,6 +91,6 @@ func focusDesktop(of display: Display) {
     }
     print("\(stamp()) focus: activated Finder in place of \(app), which has no window here")
     fflush(stdout)
-    noteOwnSwitch(to: display.currentSpaceID, on: display.uuid)
+    noteOwnSwitch()
     finder.activate()
 }

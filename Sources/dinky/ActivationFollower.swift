@@ -46,9 +46,10 @@ private func noteCurrentSpace() {
 }
 
 // Tells the activation follower that this Space change, or this activation on the current Space, is
-// dinky's own, so the activation it causes is not followed.
-func noteOwnSwitch(to target: UInt64, on uuid: String) {
-    lastSeenSpaceIDs[uuid] = target
+// dinky's own, so the activation it causes is not followed. The Space it lands on is left for
+// `noteCurrentSpace` to see: a switch can take longer than `arrivalWindow` to land (350-700 ms on an Intel Mac
+// before macOS 27), and macOS's arrival activation comes after the landing, so the window has to start there.
+func noteOwnSwitch() {
     spaceChanged()
 }
 
