@@ -107,13 +107,13 @@
           "minimum": 0.1,
           "maximum": 0.9,
           "default": 0.6,
-          "description": "The master's share of the display while windows are stacked beside it. Hyprland's mfact."
+          "description": "The master's share of the display inside the outer gaps while windows are stacked beside it. Hyprland calls it mfact."
         },
         "side": {
           "type": "string",
           "enum": ["left", "right"],
           "default": "left",
-          "description": "The side the master takes; the stack goes on the other. Hyprland's orientation."
+          "description": "The side the master takes; the stack goes on the other. Hyprland calls it orientation."
         }
       }
     },
