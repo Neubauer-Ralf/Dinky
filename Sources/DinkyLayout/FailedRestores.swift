@@ -45,3 +45,41 @@ public struct FailedRestores: Equatable, Sendable {
 
     public var ids: Set<WindowID> { Set(leftAt.keys) }
 }
+
+/// Why a restore could not put a window back, and whether a later restore may still manage it. Only a window held
+/// up by something that passes is kept: an app that did not answer in time, a display or Space move that did not
+/// go through. A window that answered with another frame (held by a minimum size) or could not be read back gets
+/// the same answer every time, and kept journaled it would be offered as "Restore N windows" at every launch.
+public enum RestoreProblem: Equatable, Sendable, CustomStringConvertible {
+    case closed
+    case movedByHand
+    case displayGone
+    case spaceGone
+    case spaceMoveFailed
+    case didNotArrive
+    case noAnswer(seconds: Int)
+    case unreadable(wanted: CGRect)
+    case wrongFrame(got: CGRect, wanted: CGRect)
+
+    /// Whether the window stays journaled for the next restore.
+    public var retries: Bool {
+        switch self {
+        case .displayGone, .spaceMoveFailed, .didNotArrive, .noAnswer: true
+        case .closed, .movedByHand, .spaceGone, .unreadable, .wrongFrame: false
+        }
+    }
+
+    public var description: String {
+        switch self {
+        case .closed: "closed"
+        case .movedByHand: "moved by hand since the last try, leaving it there"
+        case .displayGone: "its display is gone"
+        case .spaceGone: "its Space is gone"
+        case .spaceMoveFailed: "move to its Space failed"
+        case .didNotArrive: "did not arrive on its Space"
+        case .noAnswer(let seconds): "no answer within \(seconds) s"
+        case .unreadable(let wanted): "unreadable, wanted \(wanted)"
+        case .wrongFrame(let got, let wanted): "frame \(got), wanted \(wanted)"
+        }
+    }
+}
