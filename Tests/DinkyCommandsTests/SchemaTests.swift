@@ -79,6 +79,10 @@ struct SchemaTests {
         [scrolling]
         column-width = 0.5
 
+        [master]
+        size = 0.55
+        orientation = 'right'
+
         [gaps]
         inner.horizontal = 4
         inner.vertical = 6

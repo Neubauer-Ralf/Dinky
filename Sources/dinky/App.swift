@@ -150,7 +150,8 @@ final class DinkyApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
             ("Taller", "resize height +50"), ("Shorter", "resize height -50"),
         ])))
         menu.addItem(submenu("Layout", items([
-            ("Tiles", "layout tiles"), ("Accordion", "layout accordion"), ("Scrolling", "layout scrolling"), nil,
+            ("Tiles", "layout tiles"), ("Accordion", "layout accordion"), ("Scrolling", "layout scrolling"),
+            ("Master", "layout master"), ("Dwindle", "layout dwindle"), nil,
             ("Horizontal", "layout horizontal"), ("Vertical", "layout vertical"),
             ("Follow Longer Side", "layout auto"), nil,
             ("Toggle Floating", "layout floating tiling"),

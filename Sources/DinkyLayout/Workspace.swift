@@ -6,6 +6,8 @@ public enum TilingAlgorithm: Equatable, Sendable {
     case fixed(rows: Int, columns: Int, expand: FixedExpansion)
     /// A strip of columns wider than the screen, scrolled to the focused one. See Scrolling.swift.
     case scrolling
+    /// A master window on one side and a stack of the others beside it. See Master.swift.
+    case master(MasterOrientation)
 }
 
 public enum FixedExpansion: Equatable, Sendable {
@@ -41,6 +43,11 @@ public struct Workspace: Equatable, Sendable {
     var scrollOffset: CGFloat = 0
     /// Scrolling: the edges of `bounds` with another display beyond them, where a window cannot hang over.
     public var walls: Set<Direction> = []
+    /// Master: the master window's share of the width inside the outer gaps while the stack is open.
+    public var masterSize = 0.6
+    /// Master: how the stack shows its windows, kept while it is closed.
+    var stackMode = LayoutMode.tiles
+    var stackOrientation = ContainerOrientation.vertical
     /// The algorithm a `layout` command switched to, kept over the config's. Nil follows the config.
     public var chosenAlgorithm: TilingAlgorithm?
 
@@ -59,7 +66,7 @@ public struct Workspace: Equatable, Sendable {
         case .fixed(let rows, let columns, _):
             precondition(rows > 0 && columns > 0)
             root = Self.fixedRoot(rows: rows, columns: columns)
-        case .scrolling:
+        case .scrolling, .master:
             root = Container(.horizontal)
         }
     }
@@ -80,6 +87,8 @@ public struct Workspace: Equatable, Sendable {
         if case .fixed(_, _, let expansion) = algorithm, insertIntoFixed(id, expand: expansion) {
             return focus(id)
         }
+        if isMaster, windows.isEmpty { root = Container(.horizontal) }
+        if isMaster, insertIntoMaster(id) { return focus(id) }
         if isScrolling {
             insertColumn(id)
             return focus(id)
@@ -110,6 +119,8 @@ public struct Workspace: Equatable, Sendable {
         if case .fixed = algorithm, isFixedTree {
             removeFixedWindow(at: path)
             trimEmptyOverflow()
+        } else if isMasterTree {
+            removeFromMaster(at: path)
         } else {
             root.modify(at: Array(path.dropLast())) { $0.remove(at: path.last!) }
             normalize()
@@ -117,6 +128,7 @@ public struct Workspace: Equatable, Sendable {
         if windows.isEmpty, case .fixed(let rows, let columns, _) = algorithm {
             root = Self.fixedRoot(rows: rows, columns: columns)
         }
+        if windows.isEmpty, isMaster { root = Container(.horizontal) }
         columnWidths[id] = nil
         if focused == id {
             isFullscreen = false
@@ -224,13 +236,20 @@ public struct Workspace: Equatable, Sendable {
     /// Switch algorithms. Changing the template deliberately rearranges the existing windows once.
     public mutating func setAlgorithm(_ new: TilingAlgorithm) {
         guard algorithm != new else { return }
+        var ids = orderedWindows
+        if case .master = new, !isMaster { ids = takeOverForMaster(ids) }
         algorithm = new
-        rebuild()
+        rebuild(ids)
     }
 
-    /// Lay the windows out afresh in the configured layout, keeping their order and focus.
-    private mutating func rebuild() {
-        let ids = isFixedTree ? fixedWindows : windows
+    /// The windows in the order their layout fills it: a fixed template's row by row, the master first, else
+    /// tree order.
+    private var orderedWindows: [WindowID] {
+        isFixedTree ? fixedWindows : isMasterTree ? masterOrder : windows
+    }
+
+    /// Lay `ids` out afresh in the configured layout, in order, keeping the focus.
+    private mutating func rebuild(_ ids: [WindowID]) {
         switch algorithm {
         case .dwindle(let mode):
             root = Container(mode == .accordion && autoOrientAccordions ? .auto : .horizontal, mode, ids.map(Node.window))
@@ -240,6 +259,9 @@ public struct Workspace: Equatable, Sendable {
         case .scrolling:
             root = Container(.horizontal, .tiles, ids.map(Node.window))
             for id in ids { columnWidths[id] = columnWidths[id] ?? columnWidth }
+        case .master:
+            root = Container(.horizontal)
+            for id in ids { _ = insertIntoMaster(id) }
         }
         if let focused { focus(focused) }
     }
@@ -257,7 +279,7 @@ public struct Workspace: Equatable, Sendable {
     /// Undo every tree edit: the windows go back into the configured layout, in order, with equal ratios.
     public mutating func flatten() {
         isFullscreen = false
-        rebuild()
+        rebuild(orderedWindows)
     }
 
     /// Focus a window and mark it most recent along its path, so accordions show it on top.
@@ -323,7 +345,7 @@ public struct Workspace: Equatable, Sendable {
     /// Give every container in the tree equal ratios.
     public mutating func balanceSizes() {
         isFullscreen = false
-        root.balance()
+        if isMasterTree { balanceMaster() } else { root.balance() }
         for id in columnWidths.keys { columnWidths[id] = columnWidth }
         if let focused { reveal(focused) }
     }
@@ -336,6 +358,15 @@ public struct Workspace: Equatable, Sendable {
     /// The axis of the window's parent container, `auto` resolved, nil if the window is not here.
     public func containerAxis(of id: WindowID) -> Orientation? {
         root.path(of: id).map { axisOfContainer(at: Array($0.dropLast())) }
+    }
+
+    /// The container `layout` commands change for the window, with the axis it runs along now: its parent, or in
+    /// a master layout the stack, as it shows or will open. Nil if the window is not here.
+    public func layoutContainer(of id: WindowID) -> (container: Container, axis: Orientation)? {
+        guard let path = root.path(of: id) else { return nil }
+        guard isMasterTree else { return (root.container(at: Array(path.dropLast())), axisOfContainer(at: Array(path.dropLast()))) }
+        let stack = stackPath.map { root.container(at: $0) } ?? Container(stackOrientation, stackMode)
+        return (stack, stack.axis(in: stackPath.map { rect(at: $0, in: tiledLayout()) } ?? gaps.inset(bounds)))
     }
 
     /// The axis the container at `path` runs along now, `auto` resolved from the rectangle it is laid out in,
@@ -365,6 +396,7 @@ public struct Workspace: Equatable, Sendable {
     /// an accordion turns `auto` unless a command chose its orientation.
     public mutating func setLayout(_ mode: LayoutMode?, _ orientation: ContainerOrientation?) {
         isFullscreen = false
+        if isMasterTree { return setStackLayout(mode, orientation) }
         // The strip itself stays a row of columns; a window alone in its column has no container to change.
         guard let focused, let path = root.path(of: focused), !(isScrolling && path.count == 1) else { return }
         root.modify(at: Array(path.dropLast())) { c in
@@ -411,6 +443,7 @@ public struct Workspace: Equatable, Sendable {
     /// would lose the template.
     mutating func normalize() {
         if case .fixed = algorithm, isFixedTree { return }
+        if isMasterTree { return }
         root.normalize()
         // The strip stays the root even with one column left.
         if !isScrolling, root.children.count == 1, case .container(let only) = root.children[0] { root = only }

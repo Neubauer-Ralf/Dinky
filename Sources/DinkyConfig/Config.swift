@@ -24,6 +24,7 @@ public struct Config: Equatable {
     public var floatWindowsWithoutFullscreen = true
     public var accordion = Accordion()
     public var scrolling = Scrolling()
+    public var master = Master()
     public var gaps = Gaps()
     /// `[display.<pattern>]` overrides, in file order.
     public var displays: [DisplayOverride] = []
@@ -118,6 +119,7 @@ public struct Config: Equatable {
         floatWindowsWithoutFullscreen = try t.bool("float-windows-without-fullscreen") ?? floatWindowsWithoutFullscreen
         accordion = try t.table("accordion").map(Accordion.init) ?? accordion
         scrolling = try t.table("scrolling").map(Scrolling.init) ?? scrolling
+        master = try t.table("master").map(Master.init) ?? master
         gaps = try t.table("gaps").map { try gaps.applying(GapsPatch($0)) } ?? gaps
         if let displayTable = try t.table("display") {
             for pattern in displayTable.keys {
@@ -141,7 +143,7 @@ public struct Config: Equatable {
 }
 
 public enum LayoutKind: String, CaseIterable {
-    case tiles, dwindle, accordion, fixed, scrolling
+    case tiles, dwindle, accordion, fixed, scrolling, master
 }
 
 public enum ExpansionKind: String, CaseIterable {
@@ -247,6 +249,28 @@ public struct Scrolling: Equatable {
         guard (0.1...1).contains(columnWidth) else { throw ConfigError(path: t.path("column-width"), "must be 0.1 to 1") }
         try t.done()
     }
+}
+
+/// `[master]`: the master layout's master window, after Hyprland's `master` category.
+public struct Master: Equatable {
+    /// The master's share of the display's width inside the outer gaps while other windows are stacked beside it.
+    /// Hyprland calls it `mfact`. Alone, the master fills the display.
+    public var size = 0.6
+    /// The side the master takes; the stack goes on the other.
+    public var orientation = MasterSide.left
+
+    public init() {}
+
+    init(_ t: Table) throws {
+        size = try t.double("size") ?? size
+        guard (0.1...0.9).contains(size) else { throw ConfigError(path: t.path("size"), "must be 0.1 to 0.9") }
+        orientation = try t.choice("orientation") ?? orientation
+        try t.done()
+    }
+}
+
+public enum MasterSide: String, CaseIterable {
+    case left, right
 }
 
 /// Below the target, or above it as a ring that never covers content or takes clicks.

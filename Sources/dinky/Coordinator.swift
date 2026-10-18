@@ -265,7 +265,12 @@ final class Coordinator {
             workspaces[key]!.accordionPadding = CGFloat(config.accordion.padding)
             workspaces[key]!.autoOrientAccordions = config.accordion.orientation == .auto
             workspaces[key]!.columnWidth = config.scrolling.columnWidth
-            workspaces[key]!.setAlgorithm(workspaces[key]!.chosenAlgorithm ?? algorithm(settings(for: key)))
+            workspaces[key]!.masterSize = config.master.size
+            // A master layout chosen with `layout master` takes the side from the config, as a configured one does.
+            if case .master = workspaces[key]!.chosenAlgorithm {
+                workspaces[key]!.chosenAlgorithm = WorkspaceSettings(tiling: true, layout: .master).algorithm(config.master)
+            }
+            workspaces[key]!.setAlgorithm(workspaces[key]!.chosenAlgorithm ?? settings(for: key).algorithm(config.master))
         }
     }
 
@@ -277,20 +282,6 @@ final class Coordinator {
     func settings(for space: UInt64) -> WorkspaceSettings {
         config.settings(forWorkspace: AppState.shared.numbers.number(of: space),
                         on: displays.display(containingSpace: space).map(displays.monitor))
-    }
-
-    func algorithm(_ settings: WorkspaceSettings) -> TilingAlgorithm {
-        let expand: FixedExpansion = switch settings.expand {
-        case .rows: .rows
-        case .columns: .columns
-        case .accordion: .accordion
-        }
-        return switch settings.layout {
-        case .tiles, .dwindle: .dwindle(.tiles)
-        case .accordion: .dwindle(.accordion)
-        case .fixed: .fixed(rows: settings.rows, columns: settings.columns, expand: expand)
-        case .scrolling: .scrolling
-        }
     }
 
     /// Classifies a window the first time it is on screen, then keeps it in the tree of its current Space
@@ -374,8 +365,9 @@ final class Coordinator {
             workspaces[key] = Workspace(bounds: display.visibleArea, gaps: gaps(on: display),
                                         accordionPadding: CGFloat(config.accordion.padding),
                                         autoOrientAccordions: config.accordion.orientation == .auto,
-                                        algorithm: algorithm(settings))
+                                        algorithm: settings.algorithm(config.master))
             workspaces[key]!.columnWidth = config.scrolling.columnWidth
+            workspaces[key]!.masterSize = config.master.size
             workspaces[key]!.walls = walls(of: display)
         }
         return key

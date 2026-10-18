@@ -30,7 +30,7 @@
     },
     "default-layout": {
       "type": "string",
-      "enum": ["tiles", "dwindle", "accordion", "fixed", "scrolling"],
+      "enum": ["tiles", "dwindle", "accordion", "fixed", "scrolling", "master"],
       "default": "tiles",
       "description": "Workspace layout. tiles is the original name for dwindle."
     },
@@ -49,12 +49,12 @@
             "additionalProperties": { "$ref": "#/definitions/workspaceSettings" }
           },
           "tiling": { "type": "boolean" },
-          "layout": { "type": "string", "enum": ["tiles", "dwindle", "accordion", "fixed", "scrolling"] },
+          "layout": { "type": "string", "enum": ["tiles", "dwindle", "accordion", "fixed", "scrolling", "master"] },
           "columns": { "type": "integer", "minimum": 1, "default": 1, "description": "Reserved columns for a fixed layout." },
           "rows": { "type": "integer", "minimum": 1, "default": 1, "description": "Reserved rows for a fixed layout." },
           "expand": { "type": "string", "enum": ["columns", "rows", "accordion"], "default": "columns", "description": "Where overflow windows go when every fixed cell is full." }
         },
-        "if": { "required": ["layout"], "properties": { "layout": { "enum": ["tiles", "dwindle", "accordion", "scrolling"] } } },
+        "if": { "required": ["layout"], "properties": { "layout": { "enum": ["tiles", "dwindle", "accordion", "scrolling", "master"] } } },
         "then": { "not": { "anyOf": [ { "required": ["columns"] }, { "required": ["rows"] }, { "required": ["expand"] } ] } }
       }
     },
@@ -79,6 +79,26 @@
           "maximum": 1,
           "default": 0.49,
           "description": "A new column's width as a share of the display. A lone column fills the display."
+        }
+      }
+    },
+    "master": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The master layout.",
+      "properties": {
+        "size": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 0.9,
+          "default": 0.6,
+          "description": "The master's share of the display while windows are stacked beside it. Hyprland's mfact."
+        },
+        "orientation": {
+          "type": "string",
+          "enum": ["left", "right"],
+          "default": "left",
+          "description": "The side the master takes; the stack goes on the other."
         }
       }
     },
@@ -285,7 +305,7 @@
     },
     "command": {
       "type": "string",
-      "pattern": "^\\s*(workspace|workspace-back-and-forth|move-window-to-workspace|move-window-to-display|focus|focus-monitor|move|join-with|resize|layout|fullscreen|flatten-workspace-tree|balance-sizes|retile|clear-minimum-sizes|mode|reload-config|enable|list-workspaces|list-windows|list-monitors|list-displays|list-modes|debug-state|exec-and-forget)(\\s.*)?$",
+      "pattern": "^\\s*(workspace|workspace-back-and-forth|move-window-to-workspace|move-window-to-display|focus|focus-monitor|move|join-with|resize|layout|fullscreen|flatten-workspace-tree|balance-sizes|swap-with-master|retile|clear-minimum-sizes|mode|reload-config|enable|list-workspaces|list-windows|list-monitors|list-displays|list-modes|debug-state|exec-and-forget)(\\s.*)?$",
       "description": "A dinky command, as `dinky help` lists them: `workspace 3`, `layout floating`, `exec-and-forget open -a Safari`."
     },
     "commands": {

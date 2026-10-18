@@ -67,6 +67,8 @@ enum Dispatcher {
             return tree("flatten-workspace-tree") { $0.flatten(); return true }
         case .balanceSizes:
             return tree("balance-sizes") { $0.balanceSizes(); return true }
+        case .swapWithMaster:
+            return tree("swap-with-master") { $0.swapWithMaster() }
         case .retile:
             guard let coordinator = AppState.shared.coordinator else { return .error("tiling is not running") }
             coordinator.reconcile()
@@ -202,28 +204,32 @@ enum Dispatcher {
     }
 
     /// Applies the layout after the last that describes the window now (see `LayoutName.next`): floating or tiling
-    /// for the window, scrolling for its workspace, a mode, an orientation or both for its container, which takes a
-    /// scrolling workspace back to its tree. Anything but floating tiles a floating window first.
+    /// for the window, scrolling, master or dwindle (its tree) for its workspace, a mode, an orientation or both for
+    /// its container, which takes a scrolling workspace back to its tree and in a master layout changes the stack.
+    /// Anything but floating tiles a floating window first.
     private static func layout(_ names: [LayoutName], window: WindowID?) -> Reply {
         guard let coordinator = AppState.shared.coordinator else { return .error("tiling is not running") }
         let id = window ?? coordinator.focusedWindow
         guard let floating = coordinator.isFloating(id) else { return .error("layout: no window dinky manages is focused") }
         var current: [LayoutName] = floating ? [.floating] : [.tiling]
-        if !floating, coordinator.isScrolling(id) {
-            current.append(.scrolling)
-        } else if !floating, let container = coordinator.container(of: id), let axis = coordinator.containerAxis(of: id) {
-            current += LayoutName.describing(container.mode, axis: axis, auto: container.orientation == .auto)
+        if !floating, let algorithm = coordinator.tilingAlgorithm(of: id), let (container, axis) = coordinator.layoutContainer(of: id) {
+            current = LayoutName.describing(tiledIn: algorithm, container.mode, axis: axis, auto: container.orientation == .auto)
         }
         let name = LayoutName.next(in: names, current: current)
         switch name {
         case .floating, .tiling:
             coordinator.setFloating(id, name == .floating)
-        case .scrolling:
+        case .scrolling, .master, .dwindle:
             if floating { coordinator.setFloating(id, false) }
-            coordinator.setScrolling(true, for: id)
+            let layout: LayoutKind? = switch name {
+            case .scrolling: .scrolling
+            case .master: .master
+            default: nil
+            }
+            coordinator.switchLayout(to: layout, for: id)
         default:
             if floating { coordinator.setFloating(id, false) }
-            if coordinator.isScrolling(id) { coordinator.setScrolling(false, for: id) }
+            if coordinator.isScrolling(id) { coordinator.switchLayout(to: nil, for: id) }
             coordinator.command(on: id) { $0.setLayout(name.mode, name.orientation) }
         }
         return .ok("layout \(name.rawValue)")

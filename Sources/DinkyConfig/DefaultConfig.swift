@@ -10,7 +10,7 @@ extension Config {
 
     start-at-login = true
     workspaces = 5                  # across all displays, one native Space each
-    default-layout = 'tiles'        # tiles (dwindle) | dwindle | accordion | fixed | scrolling
+    default-layout = 'tiles'        # tiles (dwindle) | dwindle | accordion | fixed | scrolling | master
     default-tiling = true           # false leaves workspaces untiled unless overridden
     follow-app-activation = true    # Cmd-Tab and Dock clicks switch Spaces the fast way
     float-windows-without-fullscreen = true   # progress windows, About, Calculator and the like float
@@ -33,6 +33,10 @@ extension Config {
 
     [scrolling]
     column-width = 0.49             # a new column's share of the display; a lone column fills it
+
+    [master]
+    size = 0.6                      # the master's share of the display beside the stack; alone it fills it
+    orientation = 'left'            # left | right: the master's side
 
     [gaps]
     inner = 8                       # or { horizontal = 8, vertical = 8 }

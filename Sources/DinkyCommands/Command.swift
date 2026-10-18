@@ -22,6 +22,8 @@ public enum Command: Equatable, Sendable {
     case fullscreen
     case flattenWorkspaceTree
     case balanceSizes
+    /// Swap the focused window with the master of a master workspace, or the master with the top of the stack.
+    case swapWithMaster
     case retile
     case clearMinimumSizes
     case mode(String)
@@ -75,11 +77,11 @@ public enum ResizeDimension: String, Equatable, Sendable {
 }
 
 /// A state for `layout`, as in AeroSpace: a mode, an orientation, both, or floating or tiling for the window;
-/// or scrolling for its workspace.
+/// or scrolling, master or dwindle (its tree) for its workspace.
 public enum LayoutName: String, Equatable, Sendable {
     case tiles, accordion, horizontal, vertical, auto
     case hTiles = "h_tiles", vTiles = "v_tiles", hAccordion = "h_accordion", vAccordion = "v_accordion"
-    case floating, tiling, scrolling
+    case floating, tiling, scrolling, master, dwindle
 
     /// The one of `names` to apply to a window `current` describes: the one after the last that describes it,
     /// wrapping, so a list cycles and two toggle; the first when none does.
@@ -106,6 +108,17 @@ public enum LayoutName: String, Equatable, Sendable {
         case .accordion: horizontal ? .hAccordion : .vAccordion
         }
         return [mode == .tiles ? .tiles : .accordion, horizontal ? .horizontal : .vertical, both] + (auto ? [.auto] : [])
+    }
+
+    /// The states a tiled window is in: tiling, its workspace's layout, and outside scrolling the mode and axis
+    /// of the container `layout` commands change for it, which in a master layout is the stack. A fixed
+    /// workspace counts as dwindle: both are trees.
+    public static func describing(tiledIn algorithm: TilingAlgorithm, _ mode: LayoutMode, axis: Orientation, auto: Bool) -> [LayoutName] {
+        switch algorithm {
+        case .scrolling: [.tiling, .scrolling]
+        case .master: [.tiling, .master] + describing(mode, axis: axis, auto: auto)
+        case .dwindle, .fixed: [.tiling, .dwindle] + describing(mode, axis: axis, auto: auto)
+        }
     }
 
     /// The container orientation this sets, nil if it leaves the orientation alone.

@@ -44,6 +44,7 @@ extension Workspace {
     @discardableResult
     public mutating func move(_ direction: Direction) -> Bool {
         isFullscreen = false
+        if isMasterTree { return moveInMaster(direction) }
         return isScrolling ? moveInStrip(direction) : moveInTree(direction)
     }
 

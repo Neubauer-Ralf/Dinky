@@ -50,4 +50,9 @@ struct FocusParseTests {
         #expect(try parse("balance-sizes") == .balanceSizes)
         #expect(throws: (any Error).self) { try parse("balance-sizes --workspace 2") }
     }
+
+    @Test func `Swap with master`() throws {
+        #expect(try parse("swap-with-master") == .swapWithMaster)
+        #expect(throws: (any Error).self) { try parse("swap-with-master left") }
+    }
 }

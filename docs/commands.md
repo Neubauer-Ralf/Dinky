@@ -23,10 +23,11 @@ prints it.
 | `move <left\|down\|up\|right>` | Move the focused window in the tree. |
 | `join-with <left\|down\|up\|right>` | Put the focused window and its neighbour in a new container. |
 | `resize <smart\|width\|height> <+n\|-n>` | Resize by n points. |
-| `layout <tiles\|accordion\|horizontal\|vertical\|auto\|h_tiles\|v_tiles\|h_accordion\|v_accordion\|floating\|tiling\|scrolling>...` | Set the container's layout, float/tile the window, or switch the workspace to [scrolling](configuration.md#scrolling); a container layout switches it back. Given several, applies the one after the current one, so `layout floating tiling` toggles and `layout tiles accordion scrolling` cycles. Acts on the focused window, tiling it first if it floats, so it does nothing on an empty workspace. |
+| `layout <tiles\|accordion\|horizontal\|vertical\|auto\|h_tiles\|v_tiles\|h_accordion\|v_accordion\|floating\|tiling\|scrolling\|master\|dwindle>...` | Set the container's layout, float/tile the window, or switch the workspace to [scrolling](configuration.md#scrolling) or [master](configuration.md#master); `dwindle` switches it back to its tree, and so does a container layout from scrolling. In a master layout a container layout sets the stack's. Given several, applies the one after the current one, so `layout floating tiling` toggles and `layout tiles accordion scrolling` cycles. Acts on the focused window, tiling it first if it floats, so it does nothing on an empty workspace. |
 | `fullscreen` | Toggle filling the workspace (not macOS full screen). |
 | `flatten-workspace-tree` | Put every window back into the workspace's layout, in order, undoing tree edits. A scrolling workspace keeps its column widths. |
 | `balance-sizes` | Give every window an equal share. |
+| `swap-with-master` | In a [master layout](configuration.md#master), swap the focused window with the master, or the master with the top of the stack. |
 | `retile` | Re-read windows and re-apply every layout. |
 | `clear-minimum-sizes` | Forget the minimum window sizes learned for every app and re-apply every layout. |
 | `mode <name>` | Switch binding mode. |

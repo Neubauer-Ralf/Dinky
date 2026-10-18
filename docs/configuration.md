@@ -27,7 +27,7 @@ file is left alone, with the read error shown in the menu.
 |---|---|---|
 | `start-at-login` | `true` | Register as a login item. |
 | `workspaces` | `5` | Workspaces across all displays, one native Space each. dinky creates and removes Spaces to match. |
-| `default-layout` | `'tiles'` | `'tiles'` (the existing dwindle layout), `'dwindle'`, `'accordion'`, `'fixed'`, or `'scrolling'`. |
+| `default-layout` | `'tiles'` | `'tiles'` (the existing dwindle layout), `'dwindle'`, `'accordion'`, `'fixed'`, `'scrolling'`, or `'master'`. |
 | `default-tiling` | `true` | Set `false` to leave workspaces untiled unless overridden. |
 | `follow-app-activation` | `true` | Cmd-Tab and Dock clicks switch Spaces the fast way. Needs the macOS "switch to a Space with open windows" setting off. |
 | `float-windows-without-fullscreen` | `true` | Float windows that can't go full screen, such as Finder's copy progress, About This Mac and Calculator. Terminals and editors that can hide their title bar still tile. A `layout tiling` rule tiles a window anyway. |
@@ -148,6 +148,52 @@ ctrl-alt-cmd-s = 'layout tiles accordion scrolling'
 | Key | Default | |
 |---|---|---|
 | `column-width` | `0.49` | A new column's width, as a share of the display inside the outer gaps, from `0.1` to `1`. Omarchy's `0.49` fits two columns side by side. |
+
+</div>
+
+## Master
+
+`layout = 'master'` gives one window, the master, a share of the display on one
+side and stacks the others beside it, as Hyprland's master layout does. The
+first window fills the display alone; the second opens the stack and later ones
+join its bottom. When the master closes, the top of the stack takes its place;
+when the stack empties, the master fills the display again.
+
+A workspace that switches to the master layout, such as after you change its
+`layout`, makes the focused window the master and stacks the others beside it
+in their order: as an accordion if most of them were in one, else as tiles.
+
+`layout tiles` and `layout accordion` switch the stack between tiles and an
+accordion running top to bottom, whichever window is focused, so
+`layout tiles accordion` toggles it. The stack keeps its mode while it is
+closed.
+
+`layout master` switches the focused window's workspace to the master layout on
+the fly, and `layout dwindle` switches it back to its tree: the one its config
+gives it, or tiles. The switch holds until you switch again, so
+`layout dwindle master` toggles.
+
+`swap-with-master` swaps the focused window with the master, or the master with
+the top of the stack. `move` swaps the focused window with its neighbour, so the
+master and the stack keep their places. `resize width` changes the master's share, `resize height`
+a window's share of the stack, and `balance-sizes` gives the master its `size`
+back and the stack equal shares. A command that changes the shape, such as
+`join-with`, leaves the layout until `flatten-workspace-tree` rebuilds it, as
+with a fixed template.
+
+```toml
+[workspace.2]
+layout = 'master'
+```
+
+## `[master]`
+
+<div class="wide-table" markdown="1">
+
+| Key | Default | |
+|---|---|---|
+| `size` | `0.6` | The master's share of the display inside the outer gaps while windows are stacked beside it, from `0.1` to `0.9`. Hyprland calls it `mfact`. It applies to a stack opened later and to `balance-sizes`. |
+| `orientation` | `'left'` | The side the master takes: `'left'` or `'right'`. The stack goes on the other. |
 
 </div>
 
@@ -363,7 +409,7 @@ The default `alt-` bindings take over Option-letter characters; set
 
 start-at-login = true
 workspaces = 5                  # across all displays, one native Space each
-default-layout = 'tiles'        # tiles (dwindle) | dwindle | accordion | fixed | scrolling
+default-layout = 'tiles'        # tiles (dwindle) | dwindle | accordion | fixed | scrolling | master
 default-tiling = true           # false leaves workspaces untiled unless overridden
 follow-app-activation = true    # Cmd-Tab and Dock clicks switch Spaces the fast way
 float-windows-without-fullscreen = true   # progress windows, About, Calculator and the like float
@@ -386,6 +432,10 @@ orientation = 'auto'            # auto: run along the container's longer side | 
 
 [scrolling]
 column-width = 0.49             # a new column's share of the display; a lone column fills it
+
+[master]
+size = 0.6                      # the master's share of the display beside the stack; alone it fills it
+orientation = 'left'            # left | right: the master's side
 
 [gaps]
 inner = 8                       # or { horizontal = 8, vertical = 8 }

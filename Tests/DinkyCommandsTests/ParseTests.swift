@@ -52,6 +52,26 @@ struct ParseTests {
         #expect(try parse("layout h_tiles v_tiles h_accordion v_accordion") == .layout([.hTiles, .vTiles, .hAccordion, .vAccordion]))
         #expect(try parse("layout floating h_accordion auto") == .layout([.floating, .hAccordion, .auto]))
         #expect(try parse("layout tiles accordion scrolling") == .layout([.tiles, .accordion, .scrolling]))
+        #expect(try parse("layout master") == .layout([.master]))
+        #expect(try parse("layout dwindle master") == .layout([.dwindle, .master]))
+    }
+
+    @Test func `A tiled window is described by its workspace's layout and the container layout changes`() {
+        #expect(LayoutName.describing(tiledIn: .dwindle(.tiles), .tiles, axis: .horizontal, auto: false)
+            == [.tiling, .dwindle, .tiles, .horizontal, .hTiles])
+        #expect(LayoutName.describing(tiledIn: .fixed(rows: 1, columns: 2, expand: .columns), .accordion, axis: .vertical, auto: true)
+            == [.tiling, .dwindle, .accordion, .vertical, .vAccordion, .auto])
+        #expect(LayoutName.describing(tiledIn: .master(.left), .accordion, axis: .vertical, auto: false)
+            == [.tiling, .master, .accordion, .vertical, .vAccordion])
+        #expect(LayoutName.describing(tiledIn: .scrolling, .tiles, axis: .horizontal, auto: false) == [.tiling, .scrolling])
+    }
+
+    @Test func `Dwindle and master toggle, and tiles and accordion toggle the master stack`() {
+        let tree = LayoutName.describing(tiledIn: .dwindle(.tiles), .tiles, axis: .horizontal, auto: false)
+        let master = LayoutName.describing(tiledIn: .master(.left), .tiles, axis: .vertical, auto: false)
+        #expect(LayoutName.next(in: [.dwindle, .master], current: tree) == .master)
+        #expect(LayoutName.next(in: [.dwindle, .master], current: master) == .dwindle)
+        #expect(LayoutName.next(in: [.tiles, .accordion], current: master) == .accordion)
     }
 
     @Test func `Several layouts cycle from the last that describes the window`() {
@@ -115,7 +135,7 @@ struct ParseTests {
     private static let knownGood = [
         "workspace 1", "workspace-back-and-forth", "move-window-to-workspace 2 --follow", "move-window-to-display next",
         "focus left", "focus-monitor next", "move left", "join-with left", "resize smart +10", "layout tiles",
-        "fullscreen", "flatten-workspace-tree", "balance-sizes", "retile", "clear-minimum-sizes", "mode main", "reload-config", "enable on",
+        "fullscreen", "flatten-workspace-tree", "balance-sizes", "swap-with-master", "retile", "clear-minimum-sizes", "mode main", "reload-config", "enable on",
         "list-workspaces", "list-windows", "list-monitors", "list-displays", "list-modes", "debug-state", "exec-and-forget true",
     ]
 

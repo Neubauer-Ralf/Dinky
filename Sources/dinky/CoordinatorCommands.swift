@@ -1,3 +1,4 @@
+import DinkyConfig
 import DinkyLayout
 
 // What commands ask of the coordinator: tree commands on the focused window's Space, floating, and
@@ -26,23 +27,36 @@ extension Coordinator {
         placements[id]?.space.flatMap { workspaces[$0]?.isInView(id) } ?? true
     }
 
-    /// Switches a tiled window's workspace to the scrolling strip, or back to the tree its config gives it
-    /// (tiles when that is scrolling too). The choice holds until switched again.
-    func setScrolling(_ on: Bool, for id: WindowID) {
+    /// The layout of a tiled window's workspace.
+    func tilingAlgorithm(of id: WindowID) -> TilingAlgorithm? {
+        placements[id]?.space.flatMap { workspaces[$0]?.algorithm }
+    }
+
+    /// Switches a tiled window's workspace to the scrolling strip or the master layout, or with nil back to the
+    /// tree its config gives it (tiles when the config gives scrolling or master). The choice holds until switched
+    /// again.
+    func switchLayout(to layout: LayoutKind?, for id: WindowID) {
         guard let key = placements[id]?.space else { return }
-        let configured = algorithm(settings(for: key))
-        let new: TilingAlgorithm = on ? .scrolling : configured == .scrolling ? .dwindle(.tiles) : configured
+        let configured = settings(for: key).algorithm(config.master)
+        let tree: TilingAlgorithm = switch configured {
+        case .scrolling, .master: .dwindle(.tiles)
+        case .dwindle, .fixed: configured
+        }
+        let new = layout.map { WorkspaceSettings(tiling: true, layout: $0).algorithm(config.master) } ?? tree
         edit(key) {
+            // Focused first: switching to master makes the focused window the master, and this is the window the
+            // command is for, which a rule run for a window that is no longer focused would otherwise miss.
+            $0.focus(id)
             $0.chosenAlgorithm = new == configured ? nil : new
             $0.setAlgorithm(new)
-            $0.focus(id)
         }
         flush()
     }
 
-    /// The axis the container holding a tiled window runs along now, `auto` resolved.
-    func containerAxis(of id: WindowID) -> Orientation? {
-        placements[id]?.space.flatMap { workspaces[$0]?.containerAxis(of: id) }
+    /// The container `layout` commands change for a tiled window, and the axis it runs along now: see
+    /// `Workspace.layoutContainer(of:)`.
+    func layoutContainer(of id: WindowID) -> (container: Container, axis: Orientation)? {
+        placements[id]?.space.flatMap { workspaces[$0]?.layoutContainer(of: id) }
     }
 
     /// AeroSpace's name for how a window is laid out: `h_tiles`, `v_tiles`, `h_accordion` or `v_accordion`

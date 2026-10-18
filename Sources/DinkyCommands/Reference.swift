@@ -37,10 +37,12 @@ extension Command {
             description: "Put the focused window and its neighbour in a new container."),
         Doc(syntax: "resize <smart|width|height> <+N|-N>",
             description: "Grow or shrink the focused window by N points: smart along its container, width or height along that axis."),
-        Doc(syntax: "layout <tiles|accordion|horizontal|vertical|auto|h_tiles|v_tiles|h_accordion|v_accordion|floating|tiling|scrolling>...",
-            description: "Set the layout of the focused window's container, float or tile the window, or switch its workspace to scrolling. "
+        Doc(syntax: "layout <tiles|accordion|horizontal|vertical|auto|h_tiles|v_tiles|h_accordion|v_accordion|floating|tiling|scrolling|master|dwindle>...",
+            description: "Set the layout of the focused window's container, float or tile the window, or switch its workspace to scrolling or master, "
+                + "or with dwindle back to its tree. "
                 + "tiles and accordion set the mode, horizontal, vertical and auto (follow the container's longer side) "
-                + "the orientation, h_accordion and the like both; any of these takes a scrolling workspace back to its tree. "
+                + "the orientation, h_accordion and the like both; any of these takes a scrolling workspace back to its tree, "
+                + "and in a master layout sets the stack's. "
                 + "With several, apply the one after the last that describes the window now, so 'layout floating tiling' "
                 + "toggles and 'layout tiles accordion scrolling' cycles. "
                 + "An auto container counts as the orientation it follows now."),
@@ -50,6 +52,9 @@ extension Command {
             description: "Put every window on the workspace back into its layout, in order, undoing tree edits. A scrolling workspace keeps its column widths."),
         Doc(syntax: "balance-sizes",
             description: "Give every window on the focused workspace an equal share of its container."),
+        Doc(syntax: "swap-with-master",
+            description: "In a master layout, swap the focused window with the master, or the master with the top of the stack. "
+                + "Both keep their tiles and the focus stays with the window."),
         Doc(syntax: "retile",
             description: "Re-read every window and re-apply the layout of every workspace on screen."),
         Doc(syntax: "clear-minimum-sizes",

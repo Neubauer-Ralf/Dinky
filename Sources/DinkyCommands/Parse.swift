@@ -76,6 +76,8 @@ extension Command {
             return none ? .flattenWorkspaceTree : nil
         case "balance-sizes":
             return none ? .balanceSizes : nil
+        case "swap-with-master":
+            return none ? .swapWithMaster : nil
         case "retile":
             return none ? .retile : nil
         case "clear-minimum-sizes":

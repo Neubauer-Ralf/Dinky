@@ -61,7 +61,7 @@ struct ConfigTests {
         #expect(!config.followAppActivation)
         #expect(!config.floatWindowsWithoutFullscreen)
         assertError("workspaces = 0\n", path: "workspaces", line: 1, contains: "at least 1")
-        assertError("default-layout = 'stack'\n", path: "default-layout", line: 1, contains: "'tiles', 'dwindle', 'accordion', 'fixed', 'scrolling'")
+        assertError("default-layout = 'stack'\n", path: "default-layout", line: 1, contains: "'tiles', 'dwindle', 'accordion', 'fixed', 'scrolling', 'master'")
     }
 
     @Test func `Workspace layouts`() throws {
@@ -173,6 +173,20 @@ struct ConfigTests {
         #expect(try Config.parse("[scrolling]\ncolumn-width = 0.5\n").scrolling.columnWidth == 0.5)
         #expect(try Config.parse("default-layout = 'scrolling'\n").defaultLayout == .scrolling)
         assertError("[scrolling]\ncolumn-width = 1.5\n", path: "scrolling.column-width", line: 2, contains: "0.1 to 1")
+    }
+
+    @Test func master() throws {
+        #expect(Config().master == Master())
+        #expect(Config().master.size == 0.6)
+        #expect(Config().master.orientation == .left)
+        let master = try Config.parse("[master]\nsize = 0.55\norientation = 'right'\n").master
+        #expect(master.size == 0.55)
+        #expect(master.orientation == .right)
+        #expect(try Config.parse("default-layout = 'master'\n").defaultLayout == .master)
+        #expect(try Config.parse("[workspace.2]\nlayout = 'master'\n").workspaceLayouts[2]?.layout == .master)
+        assertError("[master]\nsize = 0.95\n", path: "master.size", line: 2, contains: "0.1 to 0.9")
+        assertError("[master]\nsize = nan\n", path: "master.size", line: 2, contains: "0.1 to 0.9")
+        assertError("[master]\norientation = 'top'\n", path: "master.orientation", line: 2, contains: "'left', 'right'")
     }
 
     @Test func `Syntax error has line`() {
