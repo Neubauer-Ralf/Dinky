@@ -7,44 +7,40 @@
 - New `master` layout, after Hyprland's: one window, the master, takes 0.6 of the display (`[master] size`) on the left or right (`[master] side`) and the others stack beside it. The first window fills the display alone, the second opens the stack and later ones join its bottom. When the master closes, the top of the stack takes its place; when the stack empties, the master fills the display again. `layout tiles accordion` toggles the stack between tiles and an accordion from any window.
 - `layout master` switches the focused workspace to the master layout, making the focused window the master and stacking the others as they were shown, tiled or in an accordion. `layout dwindle` switches a master or scrolling workspace back to its tree. Both are in the Layout menu.
 - New `swap-with-master` command, Hyprland's `swapwithmaster`: swaps the focused window with the master, or the master with the top of the stack.
+
 ### Configuration
 
 - `follow-app-activation` also takes a table, `[follow-app-activation]` with `enabled` and `exclude-apps`, a list of bundle IDs whose activation dinky doesn't follow to another Space. Use it for a menu bar app whose popover counts as a window, such as Synology Drive Client, which otherwise pulls you to its workspace when you click its icon (#27).
 
 ### Fixes
 
-- A browser's picture-in-picture window no longer takes dinky's focus (#13). Chromium browsers keep it above every other window and tag it like a document window, so once it was open, dinky took it for the focused one, and `focus` answered "no focused window" until it was closed. Windows above the normal level are now passed over: focus stays with the tiled window beneath, and `focus left` and friends work with the video playing.
+- A browser's picture-in-picture window no longer takes dinky's focus, so `focus left` and friends work with the video playing: focus stays with the tiled window beneath (#13). Before, Chromium browsers kept it above every other window and tagged it like a document window, so dinky took it for the focused one, and `focus` answered "no focused window" until it was closed.
 - A CLI argument with both `'` and `"` in it, such as a `--format` of `it's "%{app-name}"`, or one starting with a combining accent, reaches dinky as typed. Before, quotes were lost, and some mixes swallowed the flags after it.
 - `exec-and-forget` finds Homebrew's commands on Intel Macs, where Homebrew lives in `/usr/local`. Before, hooks like the `sketchybar` examples failed there when dinky was started from Finder or at login.
 - `dinky doctor` says dinky is developed and tested on macOS 27. Before, it claimed every build was built against 27.0, whichever SDK built it.
 - When dinky can't listen to the keyboard, as can happen right after Accessibility is granted, it keeps trying and the menu bar shows `!` with a menu line saying the key bindings are off. Before, the bindings stayed dead until dinky restarted, with nothing to say so.
 - Resizing with the keyboard leaves a window alone when it shares its container with ten or more others, as after `flatten-workspace-tree` with eleven windows. Before, growing it made it vanish.
 - `join-with left` and `right` in the scrolling layout put a window into the neighbouring column even when it sits side by side with another inside its column. Before, it joined that other window instead.
+- A window you are dragging stays under the pointer when something else changes the layout mid-drag, such as another window opening or the Dock hiding. Before, the layout wrote the dragged window back to its tile.
+- Dropping a dragged window back where it started leaves its size alone when its tile changed during the drag, such as when another window opened. Before, the drop read as dragging one edge, and resized the window into its new neighbour.
 - Showing, hiding or moving the Dock, or turning menu bar hiding on or off, fits the tiles to the new free area. Before, they kept the old one until something else changed, overlapping the Dock or leaving a gap.
 - Switching workspaces on two displays in quick succession lands each display where it was sent. Before, a switch asked for while the other display's switch moved the pointer could be dropped, with its follow-up running on the old Space.
-- A `dinky.toml` that is a symlink to a missing file, such as one into a dotfiles checkout not cloned yet, stays a symlink. Before, dinky replaced it with the default config at launch.
-- A `dinky.toml` that is a symlink reloads when the link itself is replaced, as `ln -sf` or a dotfiles tool does it. Before, dinky went on watching the file the old link pointed to.
-- dinky stops watching the config for good when it stops. Before, a watch stopped while `dinky.toml` was missing came back once the file appeared, and reported a reload.
 - Switching to an empty workspace stays there with app activation following on. Before, on a Mac where the switch took longer than 300 ms to land, such as an Intel Mac before macOS 27, Finder's activation on arrival was taken for one you asked for, and dinky followed it straight back to the workspace you left.
 - On macOS before 27, apps that stop drawing while hidden, like Ghostty, show their content after a workspace switch. Before, the switch skipped macOS's animation, so their windows were never told they were visible again and showed only their border until Cmd-Tab or Show Desktop. A switch across several workspaces plays the animation once, for the last step.
+- Focus borders show up on the Space you switch to when macOS sends dinky no event for the switch, as with some swipes another app posts. Before, dinky noticed the new Space a moment later but went on drawing borders for the old one, so windows on the new Space had none until something else redrew them (#30).
+- A `dinky.toml` that is a symlink to a missing file, such as one into a dotfiles checkout not cloned yet, stays a symlink. Before, dinky replaced it with the default config at launch.
+- A `dinky.toml` that is a symlink reloads when the link itself is replaced, as `ln -sf` or a dotfiles tool does it. Before, dinky went on watching the file the old link pointed to.
 - A frontmost app that stops responding no longer stalls typing everywhere. Before, dinky asked it for its focused window twice a second with no time limit, on the thread that also handles key bindings.
-- Reading whether a new window's fullscreen button is enabled gives up after a second, like every other question dinky asks an app. Before, an app that stopped responding could hold dinky up for 6 seconds there.
 - An app that stops responding no longer holds up the next arrangement, or disabling and quitting dinky. Before, raising its windows into their stacking order blocked for seconds, and everything waiting on that arrangement waited too.
+- A new window of an app that stops responding holds dinky up for a second at most, like every other question dinky asks an app. Before, reading whether its fullscreen button was enabled could hold dinky up for 6 seconds.
 - Overlapping windows, as in an accordion, end up in the stacking order of the latest arrangement when an app is slow to answer. Before, an earlier arrangement that waited on that app could raise its windows last, putting the old order back.
 - Disabled dinky leaves windows and Spaces alone. Before, while off it still ran `[[rules]]` on new windows, moved new windows to the focused display, and rearranged workspaces on a config reload or display change. A `dinky enable off` sent before Accessibility was granted no longer gets lost either.
 - dinky started disabled, as after a `dinky enable off` sent before Accessibility was granted, leaves windows where they are when it quits. Before, it put them back where they were when Accessibility was granted, undoing whatever you had moved since.
 - Disabling, quitting and `dinky recover` put windows back where they were when dinky launched. Before, the frames recorded as the originals could already be the tiled ones, so restoring left windows tiled.
-- A window that could not be put back, because its display was unplugged or its app did not answer, stays journaled, so the next disable, quit or `dinky recover` tries it again, unless you move it by hand in the meantime: then it stays where you put it. Before, it was forgotten after the first try.
+- A window that could not be put back, because its display was unplugged or its app did not answer, is tried again by the next disable, quit or `dinky recover`, unless you move it by hand in the meantime: then it stays where you put it. Before, it was forgotten after the first try.
 - One app that stops responding while windows are being put back no longer spoils the report for the others. Before, every window counted as not restored when any app took longer than 3 seconds.
 - Windows moved since a display was plugged in or out stay where you put them. Before, when arranging the workspaces right after the display change stopped short, a later config reload sent windows back to where they had been before that change.
 - Turning dinky back on leaves windows where you put them after a display was plugged in or out while it was off. Before, enabling it, hours later perhaps, sent them back to where they were before the display change.
-- Focus borders show up on the Space you switch to when macOS sends dinky no event for the switch, as with some swipes another app posts. Before, dinky noticed the new Space from its poll or a workspace notification but went on drawing borders for the old one, so windows on the new Space had none until something else redrew them (#30).
-
-### Other
-
-- The code that picks a workspace's layout algorithm from its settings moved onto `WorkspaceSettings`. Nothing changes in use.
-- A window you are dragging stays under the pointer when something else changes the layout mid-drag, such as another window opening or the Dock hiding. Before, the pass that followed wrote the dragged window back to its tile.
-- Dropping a dragged window back where it started leaves its size alone when its tile changed during the drag, such as when another window opened. Before, the drop read as dragging one edge, and resized the window into its new neighbour.
 
 ## 0.19
 
