@@ -18,9 +18,8 @@ public final class ConfigWatcher {
     private var directory: DispatchSourceFileSystemObject?
     /// The config path's own entry (not a symlink's target) when it was last opened; nil while missing.
     private var entry: Entry?
+    /// The debounced reload, or the next poll for a missing file; a change or `stop()` cancels either.
     private var pending: DispatchWorkItem?
-    /// Set by `stop()`, so the poll for a missing file, which can't be cancelled, does not start watching again.
-    private var stopped = false
 
     public init(url: URL, onChange: @escaping (Result<Config, ConfigError>) -> Void) {
         self.url = url
@@ -36,7 +35,6 @@ public final class ConfigWatcher {
 
     public func stop() {
         queue.sync {
-            stopped = true
             source?.cancel()
             source = nil
             directory?.cancel()
@@ -51,10 +49,7 @@ public final class ConfigWatcher {
         entry = Entry(url)
         if directory == nil { watchDirectory() }
         let fd = open(url.path, O_EVTONLY)
-        guard fd >= 0 else {
-            queue.asyncAfter(deadline: .now() + 0.5) { [weak self] in self?.reopenIfMissing() }
-            return
-        }
+        guard fd >= 0 else { return schedule(after: 0.5) { $0.reopenIfMissing() } }
         let source = DispatchSource.makeFileSystemObjectSource(
             fileDescriptor: fd, eventMask: [.write, .extend, .delete, .rename], queue: queue
         )
@@ -83,7 +78,6 @@ public final class ConfigWatcher {
     }
 
     private func reopenIfMissing() {
-        guard !stopped, source == nil else { return }
         if FileManager.default.fileExists(atPath: url.path) {
             changed()
         } else {
@@ -92,10 +86,14 @@ public final class ConfigWatcher {
     }
 
     private func changed() {
+        schedule(after: 0.1) { $0.reload() }
+    }
+
+    private func schedule(after seconds: Double, _ body: @escaping (ConfigWatcher) -> Void) {
         pending?.cancel()
-        let work = DispatchWorkItem { [weak self] in self?.reload() }
+        let work = DispatchWorkItem { [weak self] in if let self { body(self) } }
         pending = work
-        queue.asyncAfter(deadline: .now() + 0.1, execute: work)
+        queue.asyncAfter(deadline: .now() + seconds, execute: work)
     }
 
     private func reload() {
