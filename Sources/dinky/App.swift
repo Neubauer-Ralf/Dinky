@@ -22,6 +22,8 @@ final class DinkyApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem!
     /// Other tiling window managers seen running at the last refresh.
     private var otherTilers: [String] = []
+    /// Whether the key bindings' event tap exists. Creating it can fail right after Accessibility is granted.
+    private var hotkeysActive = true
     private var socket: SocketServer?
     private let onboarding = Onboarding()
     private var signals: [DispatchSourceSignal] = []
@@ -78,7 +80,13 @@ final class DinkyApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
             otherTilers = tilers
             if !tilers.isEmpty { print("app: \(otherTilersWarning(tilers))") }
         }
-        let trouble = state.configError != nil || !otherTilers.isEmpty
+        // Tries again on every refresh until the tap exists; once it does, this returns at once.
+        let keys = state.hotkeys.start()
+        if keys != hotkeysActive {
+            hotkeysActive = keys
+            print(keys ? "app: key bindings on" : "app: key bindings off, could not create the keyboard event tap (Accessibility?)")
+        }
+        let trouble = state.configError != nil || !otherTilers.isEmpty || !hotkeysActive
         statusItem.button?.title = (workspace.map { "\($0)" } ?? "?") + (trouble ? "!" : "")
         statusItem.button?.appearsDisabled = !state.enabled
     }
@@ -104,6 +112,10 @@ final class DinkyApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         if !otherTilers.isEmpty {
             menu.addItem(withTitle: otherTilersWarning(otherTilers), action: nil, keyEquivalent: "")
+        }
+        if !hotkeysActive {
+            menu.addItem(withTitle: "Key bindings are off: dinky can't read the keyboard. Check Accessibility in System Settings.",
+                         action: nil, keyEquivalent: "")
         }
         menu.addItem(.separator())
 

@@ -12,7 +12,7 @@ func runDoctor(_ args: [String]) -> Int32 {
 
     let os = ProcessInfo.processInfo.operatingSystemVersion
     print("dinky doctor")
-    print("  macOS \(os.majorVersion).\(os.minorVersion).\(os.patchVersion), dinky was built against 27.0")
+    print("  macOS \(os.majorVersion).\(os.minorVersion).\(os.patchVersion); dinky is developed and tested on macOS 27")
 
     var url = Config.userConfigURL
     if let i = args.firstIndex(of: "--config"), i + 1 < args.count { url = URL(fileURLWithPath: args[i + 1]) }

@@ -44,16 +44,14 @@ final class HotkeyEngine {
         onModeChange?(name, previous)
     }
 
-    /// Creates the tap on the current run loop. False if it could not (Accessibility missing).
+    /// Creates the tap on the current run loop, unless it exists. False if it could not (Accessibility missing);
+    /// the caller reports that, since it tries again.
     func start() -> Bool {
         guard tap == nil else { return true }
         let mask = CGEventMask(1 << CGEventType.keyDown.rawValue)
         guard let tap = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap,
                                           eventsOfInterest: mask, callback: hotkeyCallback,
-                                          userInfo: Unmanaged.passUnretained(self).toOpaque()) else {
-            fputs("hotkeys: could not create event tap (Accessibility?)\n", stderr)
-            return false
-        }
+                                          userInfo: Unmanaged.passUnretained(self).toOpaque()) else { return false }
         let source = CFMachPortCreateRunLoopSource(nil, tap, 0)
         CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)

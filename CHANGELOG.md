@@ -6,6 +6,9 @@
 
 - A browser's picture-in-picture window no longer takes dinky's focus (#13). Chromium browsers keep it above every other window and tag it like a document window, so once it was open, dinky took it for the focused one, and `focus` answered "no focused window" until it was closed. Windows above the normal level are now passed over: focus stays with the tiled window beneath, and `focus left` and friends work with the video playing.
 - A CLI argument with both `'` and `"` in it, such as a `--format` of `it's "%{app-name}"`, or one starting with a combining accent, reaches dinky as typed. Before, quotes were lost, and some mixes swallowed the flags after it.
+- `exec-and-forget` finds Homebrew's commands on Intel Macs, where Homebrew lives in `/usr/local`. Before, hooks like the `sketchybar` examples failed there when dinky was started from Finder or at login.
+- `dinky doctor` says dinky is developed and tested on macOS 27. Before, it claimed every build was built against 27.0, whichever SDK built it.
+- When dinky can't listen to the keyboard, as can happen right after Accessibility is granted, it keeps trying and the menu bar shows `!` with a menu line saying the key bindings are off. Before, the bindings stayed dead until dinky restarted, with nothing to say so.
 
 ## 0.19
 
