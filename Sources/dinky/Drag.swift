@@ -12,20 +12,19 @@ extension Coordinator {
         // Only tiled windows have a Space. Disabled, dinky leaves drags alone.
         guard enabled, dragging == nil, let key = placements[id]?.space, !isAnimating(id), mouseButtonDown,
               let tile = workspaces[key]?.layout().frames[id] else { return }
-        dragging = id
-        dragStart = tile
+        drag = (id, tile)
         showPlaceholders()
         watchDragEnd()
     }
 
     private func watchDragEnd() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
-            guard let self, let id = self.dragging, let start = self.dragStart else { return }
+            guard let self, let (id, start) = self.drag else { return }
             if self.mouseButtonDown {
                 self.showPlaceholders()
                 self.watchDragEnd()
             } else {
-                (self.dragging, self.dragStart) = (nil, nil)
+                self.drag = nil
                 self.placeholders.hide()
                 self.dropped(id, from: start)
             }
@@ -34,8 +33,8 @@ extension Coordinator {
 
     /// Lets go of the drag under way without acting on its release, as when dinky is disabled mid-drag.
     func cancelDrag() {
-        guard dragging != nil else { return }
-        (dragging, dragStart) = (nil, nil)
+        guard drag != nil else { return }
+        drag = nil
         placeholders.hide()
     }
 
@@ -59,7 +58,7 @@ extension Coordinator {
 
     /// Outline the dragged window's tile and the tile it would swap with, while the drag is a move.
     private func showPlaceholders() {
-        guard config.drag.placeholders, let id = dragging, let start = dragStart, let key = placements[id]?.space,
+        guard config.drag.placeholders, let (id, start) = drag, let key = placements[id]?.space,
               let layout = workspaces[key]?.layout(), let home = layout.frames[id], let window = model.windows[id],
               !window.frame.isClose(to: start, within: 2), movedEdges(from: start, to: window.frame) == nil
         else { return placeholders.hide() }

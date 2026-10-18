@@ -50,10 +50,10 @@ final class Coordinator {
     var adoptTargets: [WindowID: String] = [:]
     /// New windows on their way to the focused display, kept out of the trees until they arrive.
     var adopting: Set<WindowID> = []
-    /// The tiled window being dragged with the mouse, until the button is released. See Drag.swift.
-    var dragging: WindowID?
-    /// Its tile when the drag began. A tile that changes during the drag must not make the drop look like a resize.
-    var dragStart: CGRect?
+    /// The tiled window being dragged with the mouse, until the button is released, and its tile when the drag
+    /// began: a tile that changes during the drag must not make the drop look like a resize. See Drag.swift.
+    var drag: (id: WindowID, start: CGRect)?
+    var dragging: WindowID? { drag?.id }
     lazy var placeholders = DragPlaceholders()
     /// Called when the focused window changes.
     var onFocusChange: (() -> Void)?
