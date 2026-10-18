@@ -7,7 +7,9 @@ permalink: /configuration/
 
 # Configuration
 
-`~/.config/dinky/dinky.toml`, written on first run and reloaded on save.
+`~/.config/dinky/dinky.toml`, written on first run and reloaded on save. A
+symlink is followed, and replacing the link reloads too; a link to a missing
+file is left alone, with the read error shown in the menu.
 
 - Every key is optional; a missing key keeps the default below. Without
   `[mode.main]` there are no bindings, without `[[rules]]` no rules.

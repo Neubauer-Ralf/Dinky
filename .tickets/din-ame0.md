@@ -27,3 +27,7 @@ Root cause found and fixed 28 September. Not the follower: Coordinator.apply, fo
 **2026-09-28T09:30:08Z**
 
 Reopened by the user 28 September (loop after restart, and on Cmd-backtick between Ghostty windows, accordion only); the first fix only covered part of it. Two more stale-focus paths: (1) the applier's raise after each pass: raising a window of the frontmost app makes it that app's key window, so a pass with an older tree focus took focus back; (2) syncFocus on the front-app event read the previous window, since the app's front window settles ms later, so the tree missed about half of all Cmd-backtick switches and later passes acted on that. Fix: frame passes no longer activate anything (the tree follows macOS focus and commands focus themselves), raises are skipped when they could move focus off a window other than the pass's front (FrameApplier.raisingKeepsFocus), and the coordinator re-syncs focus 20 ms after a front-app event as the border manager already did. VM, two Terminal windows + Safari in an accordion: before, sustained 4/s ping-pong on Cmd-backtick and restart; after, 0 of 20 Cmd-backtick presses wrong (no bounce, tree and top window match), 6 of 6 restarts with 0 focus changes, focus commands, open, quit and switching away and back all correct.
+
+**2026-10-18T20:30:00Z**
+
+The late-arrival bounce seen once here ('followed 2 -> 6' after landing on an empty workspace) is fixed by #41: the arrival window now starts when the switch lands, not when the swipe is posted, so a slow landing's Finder activation is recognised as the arrival.
