@@ -95,14 +95,18 @@ class Fuzzer:
     def cli(self, *args):
         return self.run(self.dinky, *args)
 
+    def ask(self, *args):
+        """`dinky args` for its output, unrecorded; None when it gives no answer within 10 s."""
+        try:
+            return subprocess.run([self.dinky, *args], capture_output=True, text=True, timeout=10)
+        except subprocess.TimeoutExpired:
+            return None
+
     def state(self):
         """`dinky debug-state`, with each display's workspaces (their Spaces, by number) listed on it. The VM has one
         display, so a workspace's place in that list plus one is its number. None when the app is gone or hung."""
-        try:
-            out = subprocess.run([self.dinky, "debug-state"], capture_output=True, text=True, timeout=10)
-        except subprocess.TimeoutExpired:
-            return None
-        if out.returncode != 0: return None
+        out = self.ask("debug-state")
+        if out is None or out.returncode != 0: return None
         s = json.loads(out.stdout)
         numbered = sorted(s["workspaces"].items(), key=lambda item: int(item[0]))
         for d in s["displays"]: d["workspaces"] = [space for _, space in numbered if space in d["spaces"]]
@@ -339,10 +343,8 @@ class Fuzzer:
                 v[("j-minimum", int(id))] = f"window {id} has minimum size {size}, nearly the display ({area[2]}x{area[3]})"
         if s["dragging"]:
             v[("k-dragging", s["dragging"])] = f"dinky still thinks window {s['dragging']} is being dragged"
-        try:
-            out = subprocess.run([self.dinky, "list-workspaces", "--focused"], capture_output=True, text=True, timeout=10).stdout.strip()
-        except subprocess.TimeoutExpired:
-            out = ""  # hung: the next state() reports the app gone
+        out = self.ask("list-workspaces", "--focused")
+        out = out.stdout.strip() if out else ""  # hung: the next state() reports the app gone
         d = s["displays"][0]
         if out.isdigit() and d["workspaces"][int(out) - 1] != d["current-space"]:
             v[("f-focused-workspace", 0)] = f"list-workspaces --focused says {out}, the display is on Space {d['current-space']}"
