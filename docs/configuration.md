@@ -29,8 +29,21 @@ file is left alone, with the read error shown in the menu.
 | `workspaces` | `5` | Workspaces across all displays, one native Space each. dinky creates and removes Spaces to match. |
 | `default-layout` | `'tiles'` | `'tiles'` (the existing dwindle layout), `'dwindle'`, `'accordion'`, `'fixed'`, `'scrolling'`, or `'master'`. |
 | `default-tiling` | `true` | Set `false` to leave workspaces untiled unless overridden. |
-| `follow-app-activation` | `true` | Cmd-Tab and Dock clicks switch Spaces the fast way. Needs the macOS "switch to a Space with open windows" setting off. Write it as a `[follow-app-activation]` table with `enabled` and `exclude-apps`, a list of bundle IDs, to leave some apps unfollowed, such as a menu bar app whose popover counts as a window. |
+| `follow-app-activation` | `true` | Cmd-Tab and Dock clicks switch Spaces the fast way. Needs the macOS "switch to a Space with open windows" setting off. Write it as a [`[follow-app-activation]`](#follow-app-activation) table to leave some apps unfollowed. |
 | `float-windows-without-fullscreen` | `true` | Float windows that can't go full screen, such as Finder's copy progress, About This Mac and Calculator. Terminals and editors that can hide their title bar still tile. A `layout tiling` rule tiles a window anyway. |
+
+</div>
+
+## `[follow-app-activation]`
+
+The table form of `follow-app-activation`, in place of the top-level line.
+
+<div class="wide-table" markdown="1">
+
+| Key | Default | |
+|---|---|---|
+| `enabled` | `true` | The same as `follow-app-activation = true`. |
+| `exclude-apps` | `[]` | Bundle IDs whose activation is not followed, such as a menu bar app whose popover counts as a window. |
 
 </div>
 
