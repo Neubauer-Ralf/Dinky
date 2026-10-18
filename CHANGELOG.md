@@ -36,10 +36,6 @@
 - Windows moved since a display was plugged in or out stay where you put them. Before, when arranging the workspaces right after the display change stopped short, a later config reload sent windows back to where they had been before that change.
 - Turning dinky back on leaves windows where you put them after a display was plugged in or out while it was off. Before, enabling it, hours later perhaps, sent them back to where they were before the display change.
 
-### Other
-
-- The code that picks a workspace's layout algorithm from its settings moved onto `WorkspaceSettings`. Nothing changes in use.
-
 ## 0.19
 
 ### Tiling
