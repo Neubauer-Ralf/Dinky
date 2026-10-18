@@ -32,7 +32,7 @@ prints it.
 | `clear-minimum-sizes` | Forget the minimum window sizes learned for every app and re-apply every layout. |
 | `mode <name>` | Switch binding mode. |
 | `reload-config` | Reload the config. |
-| `enable <on\|off\|toggle>` | Turn dinky on or off. Off restores windows, takes their borders away and turns key bindings off too, so turn it back on from the menu or with `dinky enable on`. |
+| `enable <on\|off\|toggle>` | Turn dinky on or off. Off restores windows, takes their borders away and turns key bindings off too, so turn it back on from the menu or with `dinky enable on`. While off, dinky leaves new windows, `[[rules]]`, Spaces and workspaces alone; turning it on tiles what opened meanwhile, where it is. |
 | `list-workspaces`, `list-windows`, `list-monitors`, `list-displays`, `list-modes` | See [Scripting](#scripting). `list-displays` = `list-monitors`. |
 | `debug-state` | Tiling state as JSON, for bug reports. |
 | `exec-and-forget <shell command>` | Run with `/bin/sh -c` without waiting. Output goes to the log. |
@@ -71,9 +71,11 @@ printf 'workspace 2\n' | nc -U "$TMPDIR/dinky.sock"
 ## Recovery
 
 dinky journals each window's original frame and Space before tiling it. `enable
-off`, quitting, `kill` and logging out put them all back. After a crash, the
-menu offers to restore them (or `dinky recover`); dinky stays off until `dinky
-enable on`.
+off`, quitting, `kill` and logging out put them all back. A window that can't
+be put back (display gone, app not answering) stays journaled and is tried again
+by the next disable, quit or `dinky recover`, unless you move it first. After a
+crash, the menu offers to restore them (or `dinky recover`); dinky stays off
+until `dinky enable on`.
 
 ## Scripting
 
