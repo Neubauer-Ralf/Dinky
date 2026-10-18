@@ -15,7 +15,7 @@ extension WorkspaceSettings {
         case .accordion: .dwindle(.accordion)
         case .fixed: .fixed(rows: rows, columns: columns, expand: expand)
         case .scrolling: .scrolling
-        case .master: .master(master.orientation == .left ? .left : .right)
+        case .master: .master(master.side == .left ? .left : .right)
         }
     }
 }
