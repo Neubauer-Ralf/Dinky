@@ -48,6 +48,15 @@ public struct Config: Equatable {
     /// The config shipped with dinky, used when the user has none.
     public static let `default` = try! parse(defaultTOML)
 
+    /// Write the default config to `url`, creating its folder, if there is nothing there yet. A symlink counts
+    /// even when what it points to is missing, such as a dotfiles checkout not cloned yet: writing would replace it.
+    public static func writeDefaultIfMissing(at url: URL) {
+        // Unlike fileExists, attributesOfItem describes a symlink itself rather than following it.
+        guard (try? FileManager.default.attributesOfItem(atPath: url.path)) == nil else { return }
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? (defaultTOML + "\n").write(to: url, atomically: true, encoding: .utf8)
+    }
+
     public static func load(from url: URL) throws(ConfigError) -> Config {
         let toml: String
         do {

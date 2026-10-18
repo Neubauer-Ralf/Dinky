@@ -44,10 +44,7 @@ final class AppState {
     @discardableResult
     func loadConfig() -> ConfigError? {
         let url = Config.userConfigURL
-        if !FileManager.default.fileExists(atPath: url.path) {
-            try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try? (Config.defaultTOML + "\n").write(to: url, atomically: true, encoding: .utf8)
-        }
+        Config.writeDefaultIfMissing(at: url)
         apply(Result { () throws(ConfigError) in try Config.load(from: url) })
         if watcher == nil {
             watcher = ConfigWatcher(url: url) { [weak self] in self?.apply($0) }
