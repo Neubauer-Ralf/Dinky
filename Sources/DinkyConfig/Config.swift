@@ -19,7 +19,7 @@ public struct Config: Equatable {
     /// Workspace numbers (1-based) with their own tiling settings, resolved against the top-level defaults.
     public var workspaceLayouts: [Int: WorkspaceSettings] = [:]
     /// Cmd-Tab and Dock clicks go through the fast switch.
-    public var followAppActivation = true
+    public var followAppActivation = FollowAppActivation()
     /// Float standard windows whose fullscreen button is missing or disabled, as AeroSpace does.
     public var floatWindowsWithoutFullscreen = true
     public var accordion = Accordion()
@@ -105,7 +105,11 @@ public struct Config: Equatable {
                                                                 base: WorkspaceSettings(tiling: defaultTiling, layout: defaultLayout))
             }
         }
-        followAppActivation = try t.bool("follow-app-activation") ?? followAppActivation
+        if t.isTable("follow-app-activation") {
+            followAppActivation = try FollowAppActivation(t.table("follow-app-activation")!)
+        } else if let enabled = try t.bool("follow-app-activation") {
+            followAppActivation.enabled = enabled
+        }
         floatWindowsWithoutFullscreen = try t.bool("float-windows-without-fullscreen") ?? floatWindowsWithoutFullscreen
         accordion = try t.table("accordion").map(Accordion.init) ?? accordion
         scrolling = try t.table("scrolling").map(Scrolling.init) ?? scrolling
@@ -268,6 +272,26 @@ public struct Borders: Equatable {
 
     /// Whether windows of the app with this bundle ID get a border.
     public func decorates(bundleID: String?) -> Bool {
+        !(bundleID.map(excludeApps.contains) ?? false)
+    }
+}
+
+/// `follow-app-activation = true`, or a table for apps not to follow.
+public struct FollowAppActivation: Equatable {
+    public var enabled = true
+    /// Bundle IDs whose activation is not followed, such as a menu bar app whose popover counts as a window.
+    public var excludeApps: [String] = []
+
+    public init() {}
+
+    init(_ t: Table) throws {
+        enabled = try t.bool("enabled") ?? enabled
+        excludeApps = try t.strings("exclude-apps") ?? excludeApps
+        try t.done()
+    }
+
+    /// Whether activating the app with this bundle ID switches to its Space.
+    public func follows(bundleID: String?) -> Bool {
         !(bundleID.map(excludeApps.contains) ?? false)
     }
 }

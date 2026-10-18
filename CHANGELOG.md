@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Configuration
+
+- `follow-app-activation` also takes a table, `[follow-app-activation]` with `enabled` and `exclude-apps`, a list of bundle IDs whose activation dinky doesn't follow to another Space. Use it for a menu bar app whose popover counts as a window, such as Synology Drive Client, which otherwise pulls you to its workspace when you click its icon (#27).
+
 ### Fixes
 
 - A browser's picture-in-picture window no longer takes dinky's focus (#13). Chromium browsers keep it above every other window and tag it like a document window, so once it was open, dinky took it for the focused one, and `focus` answered "no focused window" until it was closed. Windows above the normal level are now passed over: focus stays with the tiled window beneath, and `focus left` and friends work with the video playing.

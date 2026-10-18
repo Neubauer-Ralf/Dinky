@@ -15,6 +15,11 @@ extension Config {
     follow-app-activation = true    # Cmd-Tab and Dock clicks switch Spaces the fast way
     float-windows-without-fullscreen = true   # progress windows, About, Calculator and the like float
 
+    # Example: follow every app but one. Replaces the follow-app-activation line above.
+    # [follow-app-activation]
+    # enabled = true
+    # exclude-apps = ['com.synology.SynologyDrive']   # its menu bar popover counts as a window
+
     # Example: only tile workspace 2 in a fixed 2x3 template.
     # Empty cells stay empty; a seventh window adds a column by default.
     # default-tiling = false

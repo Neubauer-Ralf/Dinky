@@ -59,9 +59,24 @@
       }
     },
     "follow-app-activation": {
-      "type": "boolean",
       "default": true,
-      "description": "When Cmd-Tab or a Dock click activates an app on another Space, switch there with the fast switch."
+      "description": "When Cmd-Tab or a Dock click activates an app on another Space, switch there with the fast switch. A table also names apps not to follow.",
+      "oneOf": [
+        { "type": "boolean" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean", "default": true, "description": "Follow app activations." },
+            "exclude-apps": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "default": [],
+              "description": "Bundle IDs whose activation is not followed, such as a menu bar app whose popover counts as a window."
+            }
+          }
+        }
+      ]
     },
     "float-windows-without-fullscreen": {
       "type": "boolean",
