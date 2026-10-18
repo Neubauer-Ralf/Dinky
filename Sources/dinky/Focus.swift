@@ -49,12 +49,9 @@ func mainWindowID(of pid: pid_t) -> UInt32 {
 /// `mainWindowID` is: a hung app must not stall the key tap.
 func frontWindowID() -> UInt32 {
     guard let app = NSWorkspace.shared.frontmostApplication else { return 0 }
-    var value: CFTypeRef?
     let element = AXUIElementCreateApplication(app.processIdentifier)
     AXUIElementSetMessagingTimeout(element, 0.25)
-    guard AXUIElementCopyAttributeValue(element, kAXFocusedWindowAttribute as CFString, &value) == .success,
-          let window = value, CFGetTypeID(window) == AXUIElementGetTypeID() else { return 0 }
-    return axWindowID(window as! AXUIElement)
+    return axElement(element, kAXFocusedWindowAttribute).map(axWindowID) ?? 0
 }
 
 /// Focuses a window on a Space that is on screen: AX raise, then activate its app. Never switches Spaces:
