@@ -9,6 +9,8 @@
 - `exec-and-forget` finds Homebrew's commands on Intel Macs, where Homebrew lives in `/usr/local`. Before, hooks like the `sketchybar` examples failed there when dinky was started from Finder or at login.
 - `dinky doctor` says dinky is developed and tested on macOS 27. Before, it claimed every build was built against 27.0, whichever SDK built it.
 - When dinky can't listen to the keyboard, as can happen right after Accessibility is granted, it keeps trying and the menu bar shows `!` with a menu line saying the key bindings are off. Before, the bindings stayed dead until dinky restarted, with nothing to say so.
+- Resizing with the keyboard leaves a window alone when it shares its container with ten or more others, as after `flatten-workspace-tree` with eleven windows. Before, growing it made it vanish.
+- `join-with left` and `right` in the scrolling layout put a window into the neighbouring column even when it sits side by side with another inside its column. Before, it joined that other window instead.
 
 ## 0.19
 

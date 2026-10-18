@@ -175,6 +175,17 @@ struct ScrollingCommandTests {
         #expect(ws.tiledLayout().frames[2]!.width == 700)
     }
 
+    @Test func `Join from deep in a column goes into the neighbouring column`() {
+        var ws = strip(5)
+        let nested = Container(.horizontal, .tiles, [.window(3), .window(4)])
+        ws.root = Container(.horizontal, .tiles, [.window(1), .container(Container(.vertical, .tiles, [.window(2), .container(nested)])), .window(5)])
+        ws.columnWidths[1] = 0.3
+        ws.focus(4)
+        #expect(ws.join(.left) == true)
+        #expect(shape(ws.root) == "h[v[1 4] v[2 3] 5]")
+        #expect(ws.tiledLayout().frames[4]!.width == 300, "the width of the column it joined")
+    }
+
     @Test func `Resizing width changes the column, height the stack`() {
         var ws = strip(2)
         #expect(ws.resize(by: 100, along: .horizontal) == true)

@@ -180,4 +180,28 @@ struct ResizeTests {
         var ws = workspace(1)
         #expect(ws.resize(by: 50) == false)
     }
+
+    /// Eleven or more siblings share less than `minimumRatio` each, so no share can move without another
+    /// dropping further below it. Resize leaves them be instead of handing the window a share of 0 or less.
+    @Test(arguments: [11, 12]) func `Resize among many siblings below the minimum leaves them be`(count: Int) {
+        var ws = workspace(count, bounds: rect(0, 0, 1512, 982))
+        ws.flatten()
+        ws.focus(1)
+        let equal = Array(repeating: 1 / Double(count), count: count)
+        #expect(ws.resize(by: 50) == false)
+        assertRatios(ws.root.ratios, equal)
+        #expect(ws.resize(by: -20) == false)
+        assertRatios(ws.root.ratios, equal)
+        #expect(ws.layout().frames[1]!.width > 0)
+    }
+
+    @Test func `Shrinking a share already below the minimum does not grow it`() {
+        var ws = workspace(2)
+        ws.root.setRatios([0.05, 0.95])
+        ws.focus(1)
+        #expect(ws.resize(by: -10) == false)
+        assertRatios(ws.root.ratios, [0.05, 0.95])
+        #expect(ws.resize(by: 100) == true, "growing takes from a sibling with room")
+        assertRatios(ws.root.ratios, [0.15, 0.85])
+    }
 }

@@ -105,10 +105,12 @@ extension Workspace {
         return isScrolling ? joinInStrip(direction) : joinInTree(direction)
     }
 
-    mutating func joinInTree(_ direction: Direction) -> Bool {
+    /// `atDepth` pins the level the window joins at, as the strip does for its columns; nil takes the deepest
+    /// container along the direction with a neighbour there.
+    mutating func joinInTree(_ direction: Direction, atDepth pinned: Int? = nil) -> Bool {
         guard let focused, let path = root.path(of: focused) else { return false }
         let forward = direction.isForward, offset = forward ? 1 : -1, layout = tiledLayout()
-        guard let depth = path.indices.last(where: { depth in
+        guard let depth = pinned ?? path.indices.last(where: { depth in
             let prefix = Array(path.prefix(depth))
             return axisOfContainer(at: prefix, in: layout) == direction.orientation
                 && root.container(at: prefix).children.indices.contains(path[depth] + offset)
@@ -149,8 +151,12 @@ extension Workspace {
             let smallest = parent.children[index].minimumExtent(along, gap: gaps.inner(along), padding: accordionPadding, minimumSizes)
             let old = parent.ratios[index]
             let smallestOther = parent.ratios.enumerated().filter { $0.offset != index }.map(\.element).min()!
-            let lower = max(Self.minimumRatio, min(Double(smallest / extent), old))
-            let upper = 1 - Self.minimumRatio * (1 - old) / smallestOther
+            // A share may shrink to the larger of `minimumRatio` and its minimum size, and grow until the smallest
+            // sibling, scaled down with the others, reaches `minimumRatio`. Neither bound crosses the current share:
+            // eleven or more siblings, or a container spliced into its parent, sit below the minimum already, and
+            // must not be pushed further below it.
+            let lower = min(old, max(Self.minimumRatio, Double(smallest / extent)))
+            let upper = max(old, 1 - Self.minimumRatio * (1 - old) / smallestOther)
             let new = min(max(old + Double(delta / extent), lower), upper)
             guard abs(new - old) > 1e-9 else { return false }
             let (oldRoot, oldFrame) = (root, tiledLayout().frames[focused])
