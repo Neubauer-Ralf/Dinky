@@ -155,7 +155,6 @@ public final class FrameScheduler: @unchecked Sendable {
                 app.stepSizes = [:]
                 self.lock.withLock {
                     app.forgotten = true
-                    app.prepared = false
                     self.dropIfDone(app)
                 }
             }
@@ -186,8 +185,8 @@ public final class FrameScheduler: @unchecked Sendable {
     /// Take everything pending for one process and write it, steps first. Runs on the process's queue.
     private func drain(_ app: App) {
         let (steps, jobs, batches, needsPrepare, generation) = lock.withLock {
-            defer { app.steps = []; app.pending = []; app.batches = []; app.scheduled = false; app.prepared = !app.forgotten }
-            return (app.steps, app.pending, app.batches, !app.prepared, self.generation)
+            defer { app.steps = []; app.pending = []; app.batches = []; app.scheduled = false; app.prepared = true }
+            return (app.steps, app.pending, app.batches, !app.prepared || app.forgotten, self.generation)
         }
         if needsPrepare { prepare(app.pid) }
         for job in steps {
@@ -205,7 +204,7 @@ public final class FrameScheduler: @unchecked Sendable {
         lock.withLock {
             // In place, or already where its minimum lets it be: whatever it refused before, it has caught up.
             for result in results where result.matched || !result.written { candidates[result.job.id] = nil }
-            if quit { app.forgotten = true; app.prepared = false }
+            if quit { app.forgotten = true }
             dropIfDone(app)
         }
         for batch in batches { batch.report(results) }

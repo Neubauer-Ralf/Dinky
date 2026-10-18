@@ -364,9 +364,12 @@ public struct Workspace: Equatable, Sendable {
     /// a master layout the stack, as it shows or will open. Nil if the window is not here.
     public func layoutContainer(of id: WindowID) -> (container: Container, axis: Orientation)? {
         guard let path = root.path(of: id) else { return nil }
-        guard isMasterTree else { return (root.container(at: Array(path.dropLast())), axisOfContainer(at: Array(path.dropLast()))) }
-        let stack = stackPath.map { root.container(at: $0) } ?? Container(stackOrientation, stackMode)
-        return (stack, stack.axis(in: stackPath.map { rect(at: $0, in: tiledLayout()) } ?? gaps.inset(bounds)))
+        let containerPath = isMasterTree ? stackPath : Array(path.dropLast())
+        guard let containerPath else {
+            let stack = Container(stackOrientation, stackMode)
+            return (stack, stack.axis(in: gaps.inset(bounds)))
+        }
+        return (root.container(at: containerPath), axisOfContainer(at: containerPath))
     }
 
     /// The axis the container at `path` runs along now, `auto` resolved from the rectangle it is laid out in,
@@ -440,7 +443,8 @@ public struct Workspace: Equatable, Sendable {
     /// Tidy the tree after an edit, and unwrap a root whose only child is a container. A tree still in its fixed
     /// template is left as it is: tidying would drop its reserved empty cells and unwrap its one-cell columns, so an
     /// edit that keeps the shape, such as reorienting an overflow accordion or a `layout` that changes nothing,
-    /// would lose the template.
+    /// would lose the template. A master-shaped tree is left too: tidying would unwrap a stack of one window, or
+    /// splice a stack of horizontal tiles into the root row.
     mutating func normalize() {
         if case .fixed = algorithm, isFixedTree { return }
         if isMasterTree { return }
