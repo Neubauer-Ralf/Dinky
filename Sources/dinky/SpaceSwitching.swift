@@ -95,7 +95,10 @@ final class SpaceSwitcher {
 
     private func poll() {
         guard !posting else { return }
-        for (uuid, flight) in flights {
+        // Posting a swipe can pump the run loop, where a request may retarget another display's flight, so
+        // each flight is read afresh rather than from a copy taken before the loop.
+        for uuid in Array(flights.keys) {
+            guard let flight = flights[uuid] else { continue }
             let observed = dinky_current_space_id(uuid as CFString)
             let ms = Double(uptime() - flight.startedAt) / 1_000_000
             if flight.posted == 0 {

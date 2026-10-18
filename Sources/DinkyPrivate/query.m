@@ -29,6 +29,11 @@ static NSString *real_uuid(NSString *identifier, CGDirectDisplayID *outID)
     if ([identifier isEqualToString:@"Main"]) {
         *outID = CGMainDisplayID();
         CFUUIDRef uuid = CGDisplayCreateUUIDFromDisplayID(*outID);
+        // NULL while the main display is going away; a 0 ID drops the entry, as yabai does.
+        if (!uuid) {
+            *outID = 0;
+            return identifier;
+        }
         NSString *s = CFBridgingRelease(CFUUIDCreateString(NULL, uuid));
         CFRelease(uuid);
         return s;
@@ -107,9 +112,9 @@ NSArray<NSNumber *> *dinky_space_window_ids(uint64_t spaceID, bool includeMinimi
     int count = (int)CFArrayGetCount(windows);
     if (count) {
         CFTypeRef query = SLSWindowQueryWindows(cid, windows, count);
-        CFTypeRef iterator = SLSWindowQueryResultCopyWindows(query);
+        CFTypeRef iterator = query ? SLSWindowQueryResultCopyWindows(query) : NULL;
 
-        while (SLSWindowIteratorAdvance(iterator)) {
+        while (iterator && SLSWindowIteratorAdvance(iterator)) {
             uint64_t tags = SLSWindowIteratorGetTags(iterator);
             uint64_t attributes = SLSWindowIteratorGetAttributes(iterator);
             uint32_t parent = SLSWindowIteratorGetParentID(iterator);
@@ -123,8 +128,8 @@ NSArray<NSNumber *> *dinky_space_window_ids(uint64_t spaceID, bool includeMinimi
             if (shown && dinky_has_document_tags(tags)) [result addObject:@(wid)];
         }
 
-        CFRelease(query);
-        CFRelease(iterator);
+        if (iterator) CFRelease(iterator);
+        if (query) CFRelease(query);
     }
     CFRelease(windows);
     return result;

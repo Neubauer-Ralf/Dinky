@@ -11,6 +11,9 @@
 - When dinky can't listen to the keyboard, as can happen right after Accessibility is granted, it keeps trying and the menu bar shows `!` with a menu line saying the key bindings are off. Before, the bindings stayed dead until dinky restarted, with nothing to say so.
 - Resizing with the keyboard leaves a window alone when it shares its container with ten or more others, as after `flatten-workspace-tree` with eleven windows. Before, growing it made it vanish.
 - `join-with left` and `right` in the scrolling layout put a window into the neighbouring column even when it sits side by side with another inside its column. Before, it joined that other window instead.
+- Showing, hiding or moving the Dock, or turning menu bar hiding on or off, fits the tiles to the new free area. Before, they kept the old one until something else changed, overlapping the Dock or leaving a gap.
+- Switching workspaces on two displays in quick succession lands each display where it was sent. Before, a switch asked for while the other display's switch moved the pointer could be dropped, with its follow-up running on the old Space.
+- dinky checks the answers to its display and window queries before using them. When displays share one set of Spaces and one goes away, macOS can answer with nothing, which would have crashed dinky. No such crash has been seen; this is a guard.
 
 ## 0.19
 
