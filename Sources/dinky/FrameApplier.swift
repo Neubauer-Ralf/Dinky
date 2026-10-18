@@ -23,6 +23,8 @@ final class FrameApplier {
     /// Application Support, so the write-settle-retry chain that discovers a minimum runs once per app ever.
     private var appMinimums: [String: CGSize] = [:]
     private let raiseQueue = DispatchQueue(label: "dinky.frames.raise")
+    /// A pass's raise waits for its slowest app, so a newer pass can raise first; the older one is then skipped.
+    private let passes = LatestPasses()
     private static let supportURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appendingPathComponent("dinky")
     private static let minimumsURL = supportURL.appendingPathComponent("learned-minimum-sizes.json")
@@ -60,6 +62,13 @@ final class FrameApplier {
             unreadable.remove(id)
         }
         scheduler.forget(id)
+        passes.forget(id)
+    }
+
+    /// Forgets a process that quit: its elements and its queue, so a new process given the same pid starts afresh.
+    func forget(pid: pid_t) {
+        lock.withLock { elements = elements.filter { $0.key.pid != pid } }
+        scheduler.forget(pid: pid)
     }
 
     /// Forgets every minimum size learned, this session's and the saved ones.
@@ -77,22 +86,32 @@ final class FrameApplier {
 
     /// Write every frame in `layout`, then raise overlapping windows into the layout's order if they are not,
     /// unless that would move focus away from a window other than `front`, the one the layout puts on top.
-    /// `completion` runs on a background queue with the readback of every app touched.
+    /// `completion` runs on a background queue with the readback of every app touched, once written: it does
+    /// not wait for the raises, which queue behind earlier passes' and can block on a hung app for seconds.
     func apply(_ layout: Layout, pids: [WindowID: pid_t], front: WindowID? = nil,
                completion: @escaping ([FrameResult]) -> Void = { _ in }) {
         let jobs = layout.order.compactMap { id in
             pids[id].map { FrameJob(pid: $0, id: id, frame: layout.frames[id]!) }
         }
+        let pass = passes.begin(layout.order)
         scheduler.submit(jobs) { [unowned self] results in
             rememberAppMinimums(results)
             logUnreadable(results)
-            raiseIntoOrder(layout, pids: pids, front: front) { completion(results) }
+            // A window that could not be read back is not raised: each lookup of it would block the raise queue
+            // for a second.
+            let unreadable = results.unreadable
+            raiseIntoOrder(layout, pids: pids.filter { !unreadable.contains($0.key) }, front: front, pass: pass)
+            completion(results)
         }
     }
 
-    /// Raise overlapping windows into the layout's order if they are not, as `apply` does after writing.
-    func raiseIntoOrder(_ layout: Layout, pids: [WindowID: pid_t], front: WindowID?, then done: @escaping () -> Void = {}) {
-        raiseQueue.async {
+    /// Raise overlapping windows into the layout's order if they are not, as `apply` does after writing. Skipped
+    /// when a pass begun after `pass` (by default, now) includes any of the layout's windows: its order is newer.
+    func raiseIntoOrder(_ layout: Layout, pids: [WindowID: pid_t], front: WindowID?, pass: Int? = nil,
+                        then done: @escaping () -> Void = {}) {
+        let pass = pass ?? passes.begin(layout.order)
+        raiseQueue.async { [passes] in
+            guard passes.isLatest(pass, for: layout.order) else { return done() }
             var ids = layout.raises(current: onScreenOrder())
             // Raising makes a window its app's key window, so the front window goes last when its app had another
             // raised: it overlaps nothing (a column in view of a scrolling strip) and would lose focus otherwise.

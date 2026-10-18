@@ -18,6 +18,11 @@
 - dinky stops watching the config for good when it stops. Before, a watch stopped while `dinky.toml` was missing came back once the file appeared, and reported a reload.
 - Switching to an empty workspace stays there with app activation following on. Before, on a Mac where the switch took longer than 300 ms to land, such as an Intel Mac before macOS 27, Finder's activation on arrival was taken for one you asked for, and dinky followed it straight back to the workspace you left.
 - On macOS before 27, apps that stop drawing while hidden, like Ghostty, show their content after a workspace switch. Before, the switch skipped macOS's animation, so their windows were never told they were visible again and showed only their border until Cmd-Tab or Show Desktop. A switch across several workspaces plays the animation once, for the last step.
+- A frontmost app that stops responding no longer stalls typing everywhere. Before, dinky asked it for its focused window twice a second with no time limit, on the thread that also handles key bindings.
+- Reading whether a new window's fullscreen button is enabled gives up after a second, like every other question dinky asks an app. Before, an app that stopped responding could hold dinky up for 6 seconds there.
+- dinky lets go of what it keeps for each app once the app quits. Before, it kept it for as long as it ran, and an app that later started with a quit app's process ID was taken as already set up, so its Enhanced UI and time limit were left as they were. Process IDs are rarely reused, so this was hard to hit.
+- An app that stops responding no longer holds up the next arrangement, or disabling and quitting dinky. Before, raising its windows into their stacking order blocked for seconds, and everything waiting on that arrangement waited too.
+- Overlapping windows, as in an accordion, end up in the stacking order of the latest arrangement when an app is slow to answer. Before, an earlier arrangement that waited on that app could raise its windows last, putting the old order back.
 
 ## 0.19
 

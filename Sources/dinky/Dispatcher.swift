@@ -276,7 +276,7 @@ enum Dispatcher {
     /// tiled one.
     private static func keepOffset(of wid: WindowID, from: Display, to: Display) {
         guard from.uuid != to.uuid, AppState.shared.coordinator?.isFloating(wid) != false,
-              let pid = windowPID(wid), let element = axWindow(pid: pid, wid: wid) else { return }
+              let pid = windowPID(wid), let element = axWindow(pid: pid, wid: wid, timeout: FrameApplier.timeout) else { return }
         let frame = dinky_window_info(wid).frame
         var origin = CGPoint(x: to.frame.minX + max(0, frame.minX - from.frame.minX),
                              y: to.frame.minY + max(0, frame.minY - from.frame.minY))

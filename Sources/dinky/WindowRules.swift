@@ -68,8 +68,11 @@ private func buttonEnabled(_ element: AXUIElement, _ attribute: String) -> Bool 
     var button: CFTypeRef?
     guard AXUIElementCopyAttributeValue(element, attribute as CFString, &button) == .success,
           let button, CFGetTypeID(button) == AXUIElementGetTypeID() else { return false }
+    // The timeout is per element, and the button's would otherwise be the 6 s default, on the main thread.
+    let buttonElement = button as! AXUIElement
+    AXUIElementSetMessagingTimeout(buttonElement, FrameApplier.timeout)
     var enabled: CFTypeRef?
-    AXUIElementCopyAttributeValue(button as! AXUIElement, kAXEnabledAttribute as CFString, &enabled)
+    AXUIElementCopyAttributeValue(buttonElement, kAXEnabledAttribute as CFString, &enabled)
     return enabled as? Bool == true
 }
 

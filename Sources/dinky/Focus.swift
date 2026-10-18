@@ -9,19 +9,20 @@ func windowPID(_ wid: UInt32) -> pid_t? {
     return info.first?[kCGWindowOwnerPID as String] as? pid_t
 }
 
-// A non-zero `timeout` (seconds) bounds how long AX calls on the app and the window may block.
+// `timeout` (seconds) bounds how long AX calls on the app and the window may block. There is no default:
+// unbounded, a hung app holds the main thread, and with it the key tap, for AX's 6 s default per call.
 // Electron apps like Obsidian can answer AXWindows with an empty list while still naming the window
 // as their main or focused one, so those are asked too.
-func axWindow(pid: pid_t, wid: UInt32, timeout: Float = 0) -> AXUIElement? {
+func axWindow(pid: pid_t, wid: UInt32, timeout: Float) -> AXUIElement? {
     let app = AXUIElementCreateApplication(pid)
-    if timeout > 0 { AXUIElementSetMessagingTimeout(app, timeout) }
+    AXUIElementSetMessagingTimeout(app, timeout)
     var value: CFTypeRef?
     AXUIElementCopyAttributeValue(app, kAXWindowsAttribute as CFString, &value)
     let windows = value as? [AXUIElement] ?? []
     guard let window = windows.first(where: { axWindowID($0) == wid })
         ?? [kAXMainWindowAttribute, kAXFocusedWindowAttribute].lazy.compactMap({ axElement(app, $0) })
             .first(where: { axWindowID($0) == wid }) else { return nil }
-    if timeout > 0 { AXUIElementSetMessagingTimeout(window, timeout) }
+    AXUIElementSetMessagingTimeout(window, timeout)
     return window
 }
 
@@ -44,10 +45,13 @@ func mainWindowID(of pid: pid_t) -> UInt32 {
     return axElement(app, kAXMainWindowAttribute).map(axWindowID) ?? 0
 }
 
+/// The frontmost app's focused window, 0 if none. Asked on the main thread every half second, so bounded as
+/// `mainWindowID` is: a hung app must not stall the key tap.
 func frontWindowID() -> UInt32 {
     guard let app = NSWorkspace.shared.frontmostApplication else { return 0 }
     var value: CFTypeRef?
     let element = AXUIElementCreateApplication(app.processIdentifier)
+    AXUIElementSetMessagingTimeout(element, 0.25)
     guard AXUIElementCopyAttributeValue(element, kAXFocusedWindowAttribute as CFString, &value) == .success,
           let window = value, CFGetTypeID(window) == AXUIElementGetTypeID() else { return 0 }
     return axWindowID(window as! AXUIElement)
