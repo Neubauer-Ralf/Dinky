@@ -221,12 +221,12 @@ enum Dispatcher {
             coordinator.setFloating(id, name == .floating)
         case .scrolling, .master, .dwindle:
             if floating { coordinator.setFloating(id, false) }
-            let layout: LayoutKind? = switch name {
+            let algorithm: TilingAlgorithm? = switch name {
             case .scrolling: .scrolling
             case .master: .master
             default: nil
             }
-            coordinator.switchLayout(to: layout, for: id)
+            coordinator.switchLayout(to: algorithm, for: id)
         default:
             if floating { coordinator.setFloating(id, false) }
             if coordinator.isScrolling(id) { coordinator.switchLayout(to: nil, for: id) }
