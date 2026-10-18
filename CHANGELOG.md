@@ -18,6 +18,7 @@
 - Saving `dinky.toml` reloads it promptly even while other files in its folder keep changing. Before, a change to any file in the folder pushed the reload back, so a busy folder could hold it off for as long as it stayed busy.
 - dinky stops watching the config for good when it stops. Before, a watch stopped while `dinky.toml` was missing came back once the file appeared, and reported a reload.
 - Switching to an empty workspace stays there with app activation following on. Before, on a Mac where the switch took longer than 300 ms to land, such as an Intel Mac before macOS 27, Finder's activation on arrival was taken for one you asked for, and dinky followed it straight back to the workspace you left.
+- On macOS before 27, apps that stop drawing while hidden, like Ghostty, show their content after a workspace switch. Before, the switch skipped macOS's animation, so their windows were never told they were visible again and showed only their border until Cmd-Tab or Show Desktop. A switch across several workspaces plays the animation once, for the last step.
 
 ## 0.19
 

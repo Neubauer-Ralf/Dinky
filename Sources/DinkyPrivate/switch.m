@@ -82,6 +82,12 @@ static const uint8_t kEventDataFormatVersion = 2;
 static const double kMimiZoomDeltaY = 3.0;          // empirically required
 static const double kMimiPositionX = 0.1;           // empirically required
 static const double kMimiVelocity = 9999.0;         // high enough to skip the animation
+// The legacy swipe's velocity. At 200 or more macOS skips the animation and never tells the windows of the
+// Space it lands on that they are visible again, so apps that stop drawing while hidden, like Ghostty, stay
+// blank until something else brings them forward. At 100 a three-swipe switch only went two Spaces and lost
+// the update again; at 50 every single and back-to-back switch landed and updated, about 60-120 ms per swipe.
+// Measured on an Intel Mac with macOS 26.7.1.
+static const double kLegacyVelocity = 50.0;
 static const CFTimeInterval kMimiStepDelay = 0.03;  // mimi kMimiSpaceGestureProcessingDelay
 
 static int32_t fixed_1616(double value)
@@ -233,15 +239,18 @@ static CGEventRef mimi_create_event(int phase, double rawSign)
 }
 
 // mimi's legacy swipe for macOS before 27: began and ended, the sign and velocity in the CGEvent fields.
-static bool legacy_post_swipe(double sign)
+// Only the last swipe of a switch needs the slow velocity, since only the Space it lands on must redraw; the
+// ones before it go at kMimiVelocity and skip their animation, so a multi-Space switch shows one slide.
+static bool legacy_post_swipe(double sign, bool last)
 {
+    double velocity = last ? kLegacyVelocity : kMimiVelocity;
     CGEventRef event = CGEventCreate(NULL);
     if (!event) return false;
     CGEventSetIntegerValueField(event, kEventTypeField, kEventDockControl);
     CGEventSetIntegerValueField(event, kGestureHIDType, kHIDEventTypeDockSwipe);
     CGEventSetIntegerValueField(event, kGestureSwipeMotion, kGestureMotionHorizontal);
     CGEventSetDoubleValueField(event, kGestureSwipeProgress, sign);
-    CGEventSetDoubleValueField(event, kGestureSwipeVelocityX, sign * kMimiVelocity);
+    CGEventSetDoubleValueField(event, kGestureSwipeVelocityX, sign * velocity);
     CGEventSetIntegerValueField(event, kGesturePhase, kPhaseBegan);
     CGEventPost(kCGSessionEventTap, event);
     CGEventSetIntegerValueField(event, kGesturePhase, kPhaseEnded);
@@ -251,9 +260,9 @@ static bool legacy_post_swipe(double sign)
 }
 
 // mimi mimiPostAugmentedDockSwipe, or the legacy swipe before macOS 27. sign is +1 toward higher Space indices.
-static bool mimi_post_swipe(double sign)
+static bool mimi_post_swipe(double sign, bool last)
 {
-    if (!requires_augmentation()) return legacy_post_swipe(sign);
+    if (!requires_augmentation()) return legacy_post_swipe(sign, last);
     double rawSign = augmented_sign(sign);
     static const int phases[] = {kPhaseBegan, kPhaseChanged, kPhaseEnded};
     for (size_t i = 0; i < sizeof(phases) / sizeof(phases[0]); i++) {
@@ -313,7 +322,7 @@ static bool mimi_post_swipes(double sign, int count, CGDirectDisplayID displayID
     }
 
     bool posted = true;
-    for (int i = 0; i < count && posted; i++) posted = mimi_post_swipe(sign);
+    for (int i = 0; i < count && posted; i++) posted = mimi_post_swipe(sign, i == count - 1);
 
     if (warp) {
         pump(kMimiStepDelay);  // let the swipes land before the cursor leaves the display
