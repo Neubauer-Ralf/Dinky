@@ -179,7 +179,8 @@ final class Coordinator {
             model.reconcile(stale)
         }
         holding = wasHolding
-        // The visible area moves with the Dock and the menu bar, which no display change reports.
+        // The visible area moves with the Dock and the menu bar, which arrives as a display change that is no Space
+        // switch, as well as with the Space shown.
         fitToDisplays()
         for key in shown {
             guard var workspace = workspaces[key] else { continue }
