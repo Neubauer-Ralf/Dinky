@@ -10,7 +10,7 @@ struct ConfigTests {
         #expect(config.workspaces == 5)
         #expect(config.defaultLayout == .tiles)
         #expect(config.defaultTiling)
-        #expect(config.followAppActivation)
+        #expect(config.followAppActivation == FollowAppActivation())
         #expect(config.floatWindowsWithoutFullscreen)
         #expect(config.accordion.padding == 30)
         #expect(config.accordion.orientation == .auto)
@@ -58,7 +58,7 @@ struct ConfigTests {
         #expect(!config.startAtLogin)
         #expect(config.workspaces == 3)
         #expect(config.defaultLayout == .accordion)
-        #expect(!config.followAppActivation)
+        #expect(!config.followAppActivation.enabled)
         #expect(!config.floatWindowsWithoutFullscreen)
         assertError("workspaces = 0\n", path: "workspaces", line: 1, contains: "at least 1")
         assertError("default-layout = 'stack'\n", path: "default-layout", line: 1, contains: "'tiles', 'dwindle', 'accordion', 'fixed', 'scrolling', 'master'")
@@ -222,6 +222,33 @@ struct ConfigTests {
 
         assertError("[borders]\norder = 'over'\n", path: "borders.order", line: 2, contains: "'below', 'above'")
         assertError("[borders]\nexclude-apps = 'com.apple.finder'\n", path: "borders.exclude-apps", line: 2, contains: "list of strings")
+    }
+
+    @Test func `Follow app activation`() throws {
+        #expect(try Config.parse("").followAppActivation == FollowAppActivation())
+        #expect(try Config.parse("follow-app-activation = true\n").followAppActivation.enabled)
+        #expect(try !Config.parse("follow-app-activation = false\n").followAppActivation.enabled)
+
+        let table = try Config.parse("""
+        [follow-app-activation]
+        enabled = false
+        exclude-apps = ['com.synology.SynologyDrive', 'com.apple.TextEdit']
+        """).followAppActivation
+        #expect(!table.enabled)
+        #expect(table.excludeApps == ["com.synology.SynologyDrive", "com.apple.TextEdit"])
+
+        let excludeOnly = try Config.parse("""
+        [follow-app-activation]
+        exclude-apps = ['com.synology.SynologyDrive']
+        """).followAppActivation
+        #expect(excludeOnly.enabled)
+        #expect(!excludeOnly.follows(bundleID: "com.synology.SynologyDrive"))
+        #expect(excludeOnly.follows(bundleID: "com.apple.TextEdit"))
+        #expect(excludeOnly.follows(bundleID: nil))
+
+        assertError("follow-app-activation = 'yes'\n", path: "follow-app-activation", line: 1, contains: "true or false")
+        assertError("[follow-app-activation]\nexclude-apps = 'com.apple.finder'\n", path: "follow-app-activation.exclude-apps", line: 2, contains: "list of strings")
+        assertError("[follow-app-activation]\npaused = true\n", path: "follow-app-activation.paused", line: 2, contains: "unknown key")
     }
 
     @Test func `Binding values`() throws {

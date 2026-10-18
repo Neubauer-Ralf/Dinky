@@ -29,7 +29,7 @@ file is left alone, with the read error shown in the menu.
 | `workspaces` | `5` | Workspaces across all displays, one native Space each. dinky creates and removes Spaces to match. |
 | `default-layout` | `'tiles'` | `'tiles'` (the existing dwindle layout), `'dwindle'`, `'accordion'`, `'fixed'`, `'scrolling'`, or `'master'`. |
 | `default-tiling` | `true` | Set `false` to leave workspaces untiled unless overridden. |
-| `follow-app-activation` | `true` | Cmd-Tab and Dock clicks switch Spaces the fast way. Needs the macOS "switch to a Space with open windows" setting off. |
+| `follow-app-activation` | `true` | Cmd-Tab and Dock clicks switch Spaces the fast way. Needs the macOS "switch to a Space with open windows" setting off. Write it as a `[follow-app-activation]` table with `enabled` and `exclude-apps`, a list of bundle IDs, to leave some apps unfollowed, such as a menu bar app whose popover counts as a window. |
 | `float-windows-without-fullscreen` | `true` | Float windows that can't go full screen, such as Finder's copy progress, About This Mac and Calculator. Terminals and editors that can hide their title bar still tile. A `layout tiling` rule tiles a window anyway. |
 
 </div>
@@ -413,6 +413,11 @@ default-layout = 'tiles'        # tiles (dwindle) | dwindle | accordion | fixed 
 default-tiling = true           # false leaves workspaces untiled unless overridden
 follow-app-activation = true    # Cmd-Tab and Dock clicks switch Spaces the fast way
 float-windows-without-fullscreen = true   # progress windows, About, Calculator and the like float
+
+# Example: follow every app but one. Replaces the follow-app-activation line above.
+# [follow-app-activation]
+# enabled = true
+# exclude-apps = ['com.synology.SynologyDrive']   # its menu bar popover counts as a window
 
 # Example: only tile workspace 2 in a fixed 2x3 template.
 # Empty cells stay empty; a seventh window adds a column by default.

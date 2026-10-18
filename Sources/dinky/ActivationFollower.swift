@@ -74,7 +74,9 @@ func installActivationFollower() {
         activePID = app.processIdentifier
         activations += 1
         let name = app.localizedName ?? "?"
-        guard AppState.shared.enabled, AppState.shared.config.followAppActivation else { return }
+        let follow = AppState.shared.config.followAppActivation
+        guard AppState.shared.enabled, follow.enabled else { return }
+        guard follow.follows(bundleID: app.bundleIdentifier) else { return log("activate \(name): not followed, excluded by config") }
         guard uptime() >= pausedUntil else { return log("activate \(name): not followed, following is paused") }
         guard !isArrivalActivation() else { return log("activate \(name): not followed, macOS activated it on arrival") }
         activated(app.processIdentifier, name: name, previous: previous)

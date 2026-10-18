@@ -39,7 +39,7 @@ func runDoctor(_ args: [String]) -> Int32 {
     } else {
         ok("Spaces are not auto-rearranged")
     }
-    if config.followAppActivation {
+    if config.followAppActivation.enabled {
         if dockSetting("workspaces-auto-swoosh") ?? true {
             warn("\"When switching to an application, switch to a Space with open windows\" is on; Cmd-Tab will use macOS's slow switch instead of dinky's. The app's onboarding can turn it off")
         } else {

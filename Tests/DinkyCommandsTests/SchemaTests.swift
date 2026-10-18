@@ -51,8 +51,11 @@ struct SchemaTests {
         workspaces = 4
         default-layout = 'accordion'
         default-tiling = true
-        follow-app-activation = false
         float-windows-without-fullscreen = false
+
+        [follow-app-activation]
+        enabled = true
+        exclude-apps = ['com.synology.SynologyDrive']
 
         [workspace-to-display]
         1 = 'main'
