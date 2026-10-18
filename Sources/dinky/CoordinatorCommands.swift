@@ -37,12 +37,12 @@ extension Coordinator {
     /// again.
     func switchLayout(to layout: LayoutKind?, for id: WindowID) {
         guard let key = placements[id]?.space else { return }
-        let configured = settings(for: key).algorithm(config.master)
+        let configured = settings(for: key).algorithm
         let tree: TilingAlgorithm = switch configured {
         case .scrolling, .master: .dwindle(.tiles)
         case .dwindle, .fixed: configured
         }
-        let new = layout.map { WorkspaceSettings(tiling: true, layout: $0).algorithm(config.master) } ?? tree
+        let new = layout.map { WorkspaceSettings(tiling: true, layout: $0).algorithm } ?? tree
         edit(key) {
             // Focused first: switching to master makes the focused window the master, and this is the window the
             // command is for, which a rule run for a window that is no longer focused would otherwise miss.

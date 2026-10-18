@@ -18,7 +18,7 @@ extension Workspace {
 
     /// The index of the master in the root row: the stack goes on the other side.
     private var masterIndex: Int {
-        algorithm == .master(.right) && root.children.count == 2 ? 1 : 0
+        masterSide == .right && root.children.count == 2 ? 1 : 0
     }
 
     /// The path of the stack, nil while the master is alone or the workspace is empty.
@@ -59,7 +59,7 @@ extension Workspace {
             root.insert(.window(id), at: 0)
         case 1:
             let stack = Container(stackOrientation, stackMode, [.window(id)])
-            root.insert(.container(stack), at: algorithm == .master(.right) ? 0 : 1)
+            root.insert(.container(stack), at: masterSide == .right ? 0 : 1)
             root.setRatios(masterRatios)
         default:
             root.modify(at: stackPath!) { $0.insert(.window(id), at: $0.children.count) }

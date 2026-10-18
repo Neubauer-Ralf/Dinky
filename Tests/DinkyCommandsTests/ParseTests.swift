@@ -61,14 +61,14 @@ struct ParseTests {
             == [.tiling, .dwindle, .tiles, .horizontal, .hTiles])
         #expect(LayoutName.describing(tiledIn: .fixed(rows: 1, columns: 2, expand: .columns), .accordion, axis: .vertical, auto: true)
             == [.tiling, .dwindle, .accordion, .vertical, .vAccordion, .auto])
-        #expect(LayoutName.describing(tiledIn: .master(.left), .accordion, axis: .vertical, auto: false)
+        #expect(LayoutName.describing(tiledIn: .master, .accordion, axis: .vertical, auto: false)
             == [.tiling, .master, .accordion, .vertical, .vAccordion])
         #expect(LayoutName.describing(tiledIn: .scrolling, .tiles, axis: .horizontal, auto: false) == [.tiling, .scrolling])
     }
 
     @Test func `Dwindle and master toggle, and tiles and accordion toggle the master stack`() {
         let tree = LayoutName.describing(tiledIn: .dwindle(.tiles), .tiles, axis: .horizontal, auto: false)
-        let master = LayoutName.describing(tiledIn: .master(.left), .tiles, axis: .vertical, auto: false)
+        let master = LayoutName.describing(tiledIn: .master, .tiles, axis: .vertical, auto: false)
         #expect(LayoutName.next(in: [.dwindle, .master], current: tree) == .master)
         #expect(LayoutName.next(in: [.dwindle, .master], current: master) == .dwindle)
         #expect(LayoutName.next(in: [.tiles, .accordion], current: master) == .accordion)

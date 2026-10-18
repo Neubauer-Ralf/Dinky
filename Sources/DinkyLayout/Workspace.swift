@@ -7,7 +7,7 @@ public enum TilingAlgorithm: Equatable, Sendable {
     /// A strip of columns wider than the screen, scrolled to the focused one. See Scrolling.swift.
     case scrolling
     /// A master window on one side and a stack of the others beside it. See Master.swift.
-    case master(MasterSide)
+    case master
 }
 
 public enum FixedExpansion: Equatable, Sendable {
@@ -45,6 +45,8 @@ public struct Workspace: Equatable, Sendable {
     public var walls: Set<Direction> = []
     /// Master: the master window's share of the width inside the outer gaps while the stack is open.
     public var masterSize = 0.6
+    /// Master: the side the master window takes. See `setMasterSide(_:)`.
+    public private(set) var masterSide = MasterSide.left
     /// Master: how the stack shows its windows, kept while it is closed.
     var stackMode = LayoutMode.tiles
     var stackOrientation = ContainerOrientation.vertical
@@ -240,6 +242,14 @@ public struct Workspace: Equatable, Sendable {
         if case .master = new, !isMaster { ids = takeOverForMaster(ids) }
         algorithm = new
         rebuild(ids)
+    }
+
+    /// Move the master to `side`, keeping it, the stack and the stack's mode.
+    public mutating func setMasterSide(_ side: MasterSide) {
+        guard masterSide != side else { return }
+        let ids = orderedWindows
+        masterSide = side
+        if isMaster { rebuild(ids) }
     }
 
     /// The windows in the order their layout fills it: a fixed template's row by row, the master first, else

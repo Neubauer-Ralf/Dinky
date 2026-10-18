@@ -269,11 +269,8 @@ final class Coordinator {
             workspaces[key]!.autoOrientAccordions = config.accordion.orientation == .auto
             workspaces[key]!.columnWidth = config.scrolling.columnWidth
             workspaces[key]!.masterSize = config.master.size
-            // A master layout chosen with `layout master` takes the side from the config, as a configured one does.
-            if case .master = workspaces[key]!.chosenAlgorithm {
-                workspaces[key]!.chosenAlgorithm = WorkspaceSettings(tiling: true, layout: .master).algorithm(config.master)
-            }
-            workspaces[key]!.setAlgorithm(workspaces[key]!.chosenAlgorithm ?? settings(for: key).algorithm(config.master))
+            workspaces[key]!.setMasterSide(config.master.layoutSide)
+            workspaces[key]!.setAlgorithm(workspaces[key]!.chosenAlgorithm ?? settings(for: key).algorithm)
         }
     }
 
@@ -368,9 +365,10 @@ final class Coordinator {
             workspaces[key] = Workspace(bounds: display.visibleArea, gaps: gaps(on: display),
                                         accordionPadding: CGFloat(config.accordion.padding),
                                         autoOrientAccordions: config.accordion.orientation == .auto,
-                                        algorithm: settings.algorithm(config.master))
+                                        algorithm: settings.algorithm)
             workspaces[key]!.columnWidth = config.scrolling.columnWidth
             workspaces[key]!.masterSize = config.master.size
+            workspaces[key]!.setMasterSide(config.master.layoutSide)
             workspaces[key]!.walls = walls(of: display)
         }
         return key
