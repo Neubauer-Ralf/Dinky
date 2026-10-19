@@ -23,7 +23,8 @@ prints it.
 | `move <left\|down\|up\|right>` | Move the focused window in the tree. |
 | `join-with <left\|down\|up\|right>` | Put the focused window and its neighbour in a new container. |
 | `resize <smart\|width\|height> <+n\|-n>` | Resize by n points. |
-| `layout <tiles\|accordion\|horizontal\|vertical\|auto\|h_tiles\|v_tiles\|h_accordion\|v_accordion\|floating\|tiling\|scrolling\|master\|dwindle>...` | Set the container's layout, float/tile the window, or switch the workspace to [scrolling](configuration.md#scrolling) or [master](configuration.md#master); `dwindle` switches it back to its tree, and so does a container layout from scrolling. In a master layout a container layout sets the stack's. Given several, applies the one after the current one, so `layout floating tiling` toggles and `layout tiles accordion scrolling` cycles. Acts on the focused window, tiling it first if it floats, so it does nothing on an empty workspace. |
+| `layout <tiles\|accordion\|horizontal\|vertical\|auto\|h_tiles\|v_tiles\|h_accordion\|v_accordion\|floating\|tiling>...` | Set the layout of the focused window's container, or float/tile the window. In a [master layout](configuration.md#master) the container is the stack, in a [scrolling layout](configuration.md#scrolling) the window's column. Given several, applies the one after the current one, so `layout floating tiling` and `layout tiles accordion` toggle. Acts on the focused window, tiling it first if it floats, so it does nothing on an empty workspace. |
+| `workspace-layout <dwindle\|master\|scrolling>...` | Switch the focused window's workspace to its tree (`dwindle`, as its config gives it), to [master](configuration.md#master) with the focused window as the master, or to [scrolling](configuration.md#scrolling). The switch holds until the next. Given several, applies the one after the current one, so `workspace-layout dwindle master` toggles and `workspace-layout dwindle master scrolling` cycles. |
 | `fullscreen` | Toggle filling the workspace (not macOS full screen). |
 | `flatten-workspace-tree` | Put every window back into the workspace's layout, in order, undoing tree edits. A scrolling workspace keeps its column widths. |
 | `balance-sizes` | Give every window an equal share. |
@@ -99,7 +100,8 @@ display; `list-monitors` lists every display. Format variables:
 
 - `%{right-padding}`, `%{newline}`, `%{tab}`
 - Workspaces: `workspace`, `workspace-is-focused`, `workspace-is-visible`,
-  `monitor-id`, `monitor-name`, `monitor-is-main`
+  `workspace-layout` (`dwindle`, `fixed`, `master` or `scrolling`, empty on a
+  full-screen Space), `monitor-id`, `monitor-name`, `monitor-is-main`
 - Windows: `window-id`, `window-title`, `window-layout`,
   `window-parent-container-layout`, `window-is-floating`,
   `window-is-fullscreen`, `app-name`, `app-bundle-id`, `app-pid`, and the

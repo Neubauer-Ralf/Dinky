@@ -336,6 +336,22 @@ struct MasterCommandTests {
         #expect(ws.focused == 3)
     }
 
+    @Test func `Leaving master for dwindle keeps the stack's mode`() {
+        var ws = Workspace(bounds: rect(0, 0, 1000, 600), algorithm: .master)
+        for id: WindowID in [1, 2, 3] { ws.insert(id) }
+        ws.setLayout(.accordion, nil)
+        ws.setAlgorithm(.dwindle(.tiles))
+        #expect(ws.container(of: 1)?.mode == .accordion, "the windows were shown as an accordion")
+        var tiled = Workspace(bounds: rect(0, 0, 1000, 600), algorithm: .master)
+        for id: WindowID in [1, 2, 3] { tiled.insert(id) }
+        tiled.setAlgorithm(.dwindle(.accordion))
+        #expect(tiled.container(of: 1)?.mode == .tiles, "an accordion config does not surprise")
+        let widths = [1, 2, 3].map { frames(tiled)[$0]!.width }
+        #expect(widths.allSatisfy { abs($0 - widths[0]) <= 1 }, "equal shares again: \(widths)")
+        tiled.flatten()
+        #expect(tiled.container(of: 1)?.mode == .accordion, "flatten rebuilds from the config")
+    }
+
     @Test func `Switching from master on the right to dwindle puts the master first`() {
         var ws = master(3, .right)
         #expect(ws.windows == [2, 3, 1], "the stack comes first in the tree")

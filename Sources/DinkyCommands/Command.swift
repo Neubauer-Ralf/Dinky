@@ -16,9 +16,11 @@ public enum Command: Equatable, Sendable {
     case move(Direction)
     case joinWith(Direction)
     case resize(ResizeDimension, by: Int)
-    /// One layout, or several to cycle through: the first that does not describe the current state wins,
+    /// One layout, or several to cycle through: the one after the last that describes the current state wins,
     /// so `layout floating tiling` and `layout horizontal vertical` toggle between the two.
     case layout([LayoutName])
+    /// The focused workspace's layout, or several to cycle through as `layout` does.
+    case workspaceLayout([WorkspaceLayoutName])
     case fullscreen
     case flattenWorkspaceTree
     case balanceSizes
@@ -76,19 +78,19 @@ public enum ResizeDimension: String, Equatable, Sendable {
     case smart, width, height
 }
 
-/// A state for `layout`, as in AeroSpace: a mode, an orientation, both, or floating or tiling for the window;
-/// or scrolling, master or dwindle (its tree) for its workspace.
+/// The one of `names` to apply to a state `current` describes: the one after the last that describes it,
+/// wrapping, so a list cycles and two toggle; the first when none does.
+public func nextLayout<Name: Equatable>(in names: [Name], current: [Name]) -> Name {
+    guard let last = names.lastIndex(where: current.contains) else { return names[0] }
+    return names[(last + 1) % names.count]
+}
+
+/// A state for `layout`, as in AeroSpace: a mode, an orientation or both for the focused window's container,
+/// or floating or tiling for the window. A workspace's layout is `WorkspaceLayoutName`.
 public enum LayoutName: String, Equatable, Sendable {
     case tiles, accordion, horizontal, vertical, auto
     case hTiles = "h_tiles", vTiles = "v_tiles", hAccordion = "h_accordion", vAccordion = "v_accordion"
-    case floating, tiling, scrolling, master, dwindle
-
-    /// The one of `names` to apply to a window `current` describes: the one after the last that describes it,
-    /// wrapping, so a list cycles and two toggle; the first when none does.
-    public static func next(in names: [LayoutName], current: [LayoutName]) -> LayoutName {
-        guard let last = names.lastIndex(where: current.contains) else { return names[0] }
-        return names[(last + 1) % names.count]
-    }
+    case floating, tiling
 
     /// The container mode this sets, nil if it leaves the mode alone.
     public var mode: LayoutMode? {
@@ -110,17 +112,6 @@ public enum LayoutName: String, Equatable, Sendable {
         return [mode == .tiles ? .tiles : .accordion, horizontal ? .horizontal : .vertical, both] + (auto ? [.auto] : [])
     }
 
-    /// The states a tiled window is in: tiling, its workspace's layout, and outside scrolling the mode and axis
-    /// of the container `layout` commands change for it, which in a master layout is the stack. A fixed
-    /// workspace counts as dwindle: both are trees.
-    public static func describing(tiledIn algorithm: TilingAlgorithm, _ mode: LayoutMode, axis: Orientation, auto: Bool) -> [LayoutName] {
-        switch algorithm {
-        case .scrolling: [.tiling, .scrolling]
-        case .master: [.tiling, .master] + describing(mode, axis: axis, auto: auto)
-        case .dwindle, .fixed: [.tiling, .dwindle] + describing(mode, axis: axis, auto: auto)
-        }
-    }
-
     /// The container orientation this sets, nil if it leaves the orientation alone.
     public var orientation: ContainerOrientation? {
         switch self {
@@ -128,6 +119,20 @@ public enum LayoutName: String, Equatable, Sendable {
         case .vertical, .vTiles, .vAccordion: .vertical
         case .auto: .auto
         default: nil
+        }
+    }
+}
+
+/// A workspace layout for `workspace-layout`: its tree as the config gives it, master, or scrolling.
+public enum WorkspaceLayoutName: String, Equatable, Sendable {
+    case dwindle, master, scrolling
+
+    /// The name describing a workspace laid out by `algorithm`. A fixed workspace counts as dwindle: both are trees.
+    public static func describing(_ algorithm: TilingAlgorithm) -> WorkspaceLayoutName {
+        switch algorithm {
+        case .scrolling: .scrolling
+        case .master: .master
+        case .dwindle, .fixed: .dwindle
         }
     }
 }

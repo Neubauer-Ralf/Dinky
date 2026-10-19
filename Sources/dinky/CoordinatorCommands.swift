@@ -1,3 +1,4 @@
+import DinkyCommands
 import DinkyConfig
 import DinkyLayout
 
@@ -17,11 +18,6 @@ extension Coordinator {
         placements[id]?.space.flatMap { workspaces[$0]?.container(of: id) }
     }
 
-    /// Whether a tiled window's workspace is laid out as a scrolling strip.
-    func isScrolling(_ id: WindowID) -> Bool {
-        placements[id]?.space.flatMap { workspaces[$0]?.isScrolling } ?? false
-    }
-
     /// Whether the window shows whole: false only for a column scrolled partly or wholly out of view.
     func isInView(_ id: WindowID) -> Bool {
         placements[id]?.space.flatMap { workspaces[$0]?.isInView(id) } ?? true
@@ -32,17 +28,19 @@ extension Coordinator {
         placements[id]?.space.flatMap { workspaces[$0]?.algorithm }
     }
 
-    /// Switches a tiled window's workspace to the scrolling strip or the master layout, or with nil back to the
-    /// tree its config gives it (tiles when the config gives scrolling or master). The choice holds until switched
-    /// again.
-    func switchLayout(to algorithm: TilingAlgorithm?, for id: WindowID) {
+    /// Switches a tiled window's workspace to the scrolling strip, the master layout, or its tree: the one its
+    /// config gives it, or tiles when the config gives scrolling or master. The choice holds until switched again.
+    func switchLayout(to name: WorkspaceLayoutName, for id: WindowID) {
         guard let key = placements[id]?.space else { return }
         let configured = settings(for: key).algorithm
-        let tree: TilingAlgorithm = switch configured {
-        case .scrolling, .master: .dwindle(.tiles)
-        case .dwindle, .fixed: configured
+        let new: TilingAlgorithm = switch name {
+        case .scrolling: .scrolling
+        case .master: .master
+        case .dwindle: switch configured {
+            case .scrolling, .master: .dwindle(.tiles)
+            case .dwindle, .fixed: configured
+            }
         }
-        let new = algorithm ?? tree
         edit(key) {
             // Focused first: switching to master makes the focused window the master, and this is the window the
             // command is for, which a rule run for a window that is no longer focused would otherwise miss.
@@ -67,6 +65,14 @@ extension Coordinator {
               let container = workspace.container(of: id), let axis = workspace.containerAxis(of: id) else { return "floating" }
         if workspace.fullscreen == id { return "fullscreen" }
         return (axis == .horizontal ? "h_" : "v_") + (container.mode == .accordion ? "accordion" : "tiles")
+    }
+
+    /// The layout of the workspace on a Space, for `%{workspace-layout}`: `dwindle`, `fixed`, `master` or
+    /// `scrolling`. Nil for a Space dinky has no tree for, such as a native full-screen one.
+    func layoutName(ofWorkspace space: UInt64) -> String? {
+        guard let algorithm = workspaces[space]?.algorithm else { return nil }
+        if case .fixed = algorithm { return "fixed" }
+        return WorkspaceLayoutName.describing(algorithm).rawValue
     }
 
     /// Runs a command on the tree of a window (the focused one by default), focused in that tree, and applies

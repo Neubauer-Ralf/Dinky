@@ -51,38 +51,43 @@ struct ParseTests {
         #expect(try parse("layout accordion horizontal vertical") == .layout([.accordion, .horizontal, .vertical]))
         #expect(try parse("layout h_tiles v_tiles h_accordion v_accordion") == .layout([.hTiles, .vTiles, .hAccordion, .vAccordion]))
         #expect(try parse("layout floating h_accordion auto") == .layout([.floating, .hAccordion, .auto]))
-        #expect(try parse("layout tiles accordion scrolling") == .layout([.tiles, .accordion, .scrolling]))
-        #expect(try parse("layout master") == .layout([.master]))
-        #expect(try parse("layout dwindle master") == .layout([.dwindle, .master]))
+        #expect(throws: CommandError.self) { try parse("layout scrolling") }
+        #expect(throws: CommandError.self) { try parse("layout master") }
+        #expect(throws: CommandError.self) { try parse("layout dwindle") }
     }
 
-    @Test func `A tiled window is described by its workspace's layout and the container layout changes`() {
-        #expect(LayoutName.describing(tiledIn: .dwindle(.tiles), .tiles, axis: .horizontal, auto: false)
-            == [.tiling, .dwindle, .tiles, .horizontal, .hTiles])
-        #expect(LayoutName.describing(tiledIn: .fixed(rows: 1, columns: 2, expand: .columns), .accordion, axis: .vertical, auto: true)
-            == [.tiling, .dwindle, .accordion, .vertical, .vAccordion, .auto])
-        #expect(LayoutName.describing(tiledIn: .master, .accordion, axis: .vertical, auto: false)
-            == [.tiling, .master, .accordion, .vertical, .vAccordion])
-        #expect(LayoutName.describing(tiledIn: .scrolling, .tiles, axis: .horizontal, auto: false) == [.tiling, .scrolling])
+    @Test func `workspace-layout takes dwindle, master and scrolling`() throws {
+        #expect(try parse("workspace-layout master") == .workspaceLayout([.master]))
+        #expect(try parse("workspace-layout dwindle master scrolling") == .workspaceLayout([.dwindle, .master, .scrolling]))
+        #expect(throws: CommandError.self) { try parse("workspace-layout") }
+        #expect(throws: CommandError.self) { try parse("workspace-layout tiles") }
     }
 
-    @Test func `Dwindle and master toggle, and tiles and accordion toggle the master stack`() {
-        let tree = LayoutName.describing(tiledIn: .dwindle(.tiles), .tiles, axis: .horizontal, auto: false)
-        let master = LayoutName.describing(tiledIn: .master, .tiles, axis: .vertical, auto: false)
-        #expect(LayoutName.next(in: [.dwindle, .master], current: tree) == .master)
-        #expect(LayoutName.next(in: [.dwindle, .master], current: master) == .dwindle)
-        #expect(LayoutName.next(in: [.tiles, .accordion], current: master) == .accordion)
+    @Test func `A workspace is described by its layout, a fixed one as dwindle`() {
+        #expect(WorkspaceLayoutName.describing(.dwindle(.accordion)) == .dwindle)
+        #expect(WorkspaceLayoutName.describing(.fixed(rows: 1, columns: 2, expand: .columns)) == .dwindle)
+        #expect(WorkspaceLayoutName.describing(.master) == .master)
+        #expect(WorkspaceLayoutName.describing(.scrolling) == .scrolling)
+    }
+
+    @Test func `Workspace layouts toggle and cycle`() {
+        let toggle: [WorkspaceLayoutName] = [.dwindle, .master]
+        #expect(nextLayout(in: toggle, current: [.dwindle]) == .master)
+        #expect(nextLayout(in: toggle, current: [.master]) == .dwindle)
+        #expect(nextLayout(in: toggle, current: [.scrolling]) == .dwindle, "none describes it")
+        #expect(nextLayout(in: toggle + [.scrolling], current: [.scrolling]) == .dwindle)
     }
 
     @Test func `Several layouts cycle from the last that describes the window`() {
-        let cycle: [LayoutName] = [.tiles, .accordion, .scrolling]
-        #expect(LayoutName.next(in: cycle, current: [.tiling, .tiles, .horizontal, .hTiles]) == .accordion)
-        #expect(LayoutName.next(in: cycle, current: [.tiling, .accordion, .horizontal, .hAccordion]) == .scrolling)
-        #expect(LayoutName.next(in: cycle, current: [.tiling, .scrolling]) == .tiles)
-        #expect(LayoutName.next(in: cycle, current: [.floating]) == .tiles, "none describes it")
-        #expect(LayoutName.next(in: [.floating, .tiling], current: [.tiling, .tiles]) == .floating)
-        #expect(LayoutName.next(in: [.floating, .tiling], current: [.floating]) == .tiling)
-        #expect(LayoutName.next(in: [.accordion], current: [.tiling, .accordion]) == .accordion)
+        let cycle: [LayoutName] = [.tiles, .accordion, .vertical]
+        #expect(nextLayout(in: cycle, current: [.tiling, .tiles, .horizontal, .hTiles]) == .accordion)
+        #expect(nextLayout(in: cycle, current: [.tiling, .accordion, .horizontal, .hAccordion]) == .vertical)
+        #expect(nextLayout(in: cycle, current: [.tiling, .tiles, .vertical, .vTiles]) == .tiles)
+        #expect(nextLayout(in: cycle, current: [.floating]) == .tiles, "none describes it")
+        let floating: [LayoutName] = [.floating, .tiling]
+        #expect(nextLayout(in: floating, current: [.tiling, .tiles]) == .floating)
+        #expect(nextLayout(in: floating, current: [.floating]) == .tiling)
+        #expect(nextLayout(in: [LayoutName.accordion], current: [.tiling, .accordion]) == .accordion)
     }
 
     @Test func `Layout names set mode, orientation or both`() {
@@ -134,7 +139,7 @@ struct ParseTests {
     /// One line that parses, per documented command.
     private static let knownGood = [
         "workspace 1", "workspace-back-and-forth", "move-window-to-workspace 2 --follow", "move-window-to-display next",
-        "focus left", "focus-monitor next", "move left", "join-with left", "resize smart +10", "layout tiles",
+        "focus left", "focus-monitor next", "move left", "join-with left", "resize smart +10", "layout tiles", "workspace-layout master",
         "fullscreen", "flatten-workspace-tree", "balance-sizes", "swap-with-master", "retile", "clear-minimum-sizes", "mode main", "reload-config", "enable on",
         "list-workspaces", "list-windows", "list-monitors", "list-displays", "list-modes", "debug-state", "exec-and-forget true",
     ]

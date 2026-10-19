@@ -37,15 +37,19 @@ extension Command {
             description: "Put the focused window and its neighbour in a new container."),
         Doc(syntax: "resize <smart|width|height> <+N|-N>",
             description: "Grow or shrink the focused window by N points: smart along its container, width or height along that axis."),
-        Doc(syntax: "layout <tiles|accordion|horizontal|vertical|auto|h_tiles|v_tiles|h_accordion|v_accordion|floating|tiling|scrolling|master|dwindle>...",
-            description: "Set the layout of the focused window's container, float or tile the window, or switch its workspace to scrolling or master, "
-                + "or with dwindle back to its tree. "
+        Doc(syntax: "layout <tiles|accordion|horizontal|vertical|auto|h_tiles|v_tiles|h_accordion|v_accordion|floating|tiling>...",
+            description: "Set the layout of the focused window's container, or float or tile the window. "
                 + "tiles and accordion set the mode, horizontal, vertical and auto (follow the container's longer side) "
-                + "the orientation, h_accordion and the like both; any of these takes a scrolling workspace back to its tree, "
-                + "and in a master layout sets the stack's. "
+                + "the orientation, h_accordion and the like both. In a master layout the container is the stack, "
+                + "in a scrolling layout the window's column. "
                 + "With several, apply the one after the last that describes the window now, so 'layout floating tiling' "
-                + "toggles and 'layout tiles accordion scrolling' cycles. "
+                + "and 'layout tiles accordion' toggle. "
                 + "An auto container counts as the orientation it follows now."),
+        Doc(syntax: "workspace-layout <dwindle|master|scrolling>...",
+            description: "Switch the focused window's workspace to its tree (dwindle, as its config gives it), "
+                + "the master layout with the focused window as the master, or the scrolling layout. "
+                + "The switch holds until the next. With several, apply the one after the one the workspace has now, "
+                + "so 'workspace-layout dwindle master' toggles and 'workspace-layout dwindle master scrolling' cycles."),
         Doc(syntax: "fullscreen",
             description: "Toggle the focused window filling the workspace. The tree is kept."),
         Doc(syntax: "flatten-workspace-tree",

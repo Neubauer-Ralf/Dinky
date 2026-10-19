@@ -50,6 +50,8 @@ enum Dispatcher {
             return focusMonitor(number: n)
         case .layout(let names):
             return layout(names, window: window)
+        case .workspaceLayout(let names):
+            return workspaceLayout(names, window: window)
         case .move(let direction):
             return tree("move \(direction)") { $0.move(direction) }
         case .joinWith(let direction):
@@ -203,36 +205,39 @@ enum Dispatcher {
         }
     }
 
-    /// Applies the layout after the last that describes the window now (see `LayoutName.next`): floating or tiling
-    /// for the window, scrolling, master or dwindle (its tree) for its workspace, a mode, an orientation or both for
-    /// its container, which takes a scrolling workspace back to its tree and in a master layout changes the stack.
-    /// Anything but floating tiles a floating window first.
+    /// Applies the layout after the last that describes the window now (see `nextLayout`): floating or tiling
+    /// for the window, or a mode, an orientation or both for its container, which in a master layout is the stack
+    /// and in a scrolling layout its column. Anything but floating tiles a floating window first.
     private static func layout(_ names: [LayoutName], window: WindowID?) -> Reply {
         guard let coordinator = AppState.shared.coordinator else { return .error("tiling is not running") }
         let id = window ?? coordinator.focusedWindow
         guard let floating = coordinator.isFloating(id) else { return .error("layout: no window dinky manages is focused") }
         var current: [LayoutName] = floating ? [.floating] : [.tiling]
-        if !floating, let algorithm = coordinator.tilingAlgorithm(of: id), let (container, axis) = coordinator.layoutContainer(of: id) {
-            current = LayoutName.describing(tiledIn: algorithm, container.mode, axis: axis, auto: container.orientation == .auto)
+        if !floating, let (container, axis) = coordinator.layoutContainer(of: id) {
+            current += LayoutName.describing(container.mode, axis: axis, auto: container.orientation == .auto)
         }
-        let name = LayoutName.next(in: names, current: current)
+        let name = nextLayout(in: names, current: current)
         switch name {
         case .floating, .tiling:
             coordinator.setFloating(id, name == .floating)
-        case .scrolling, .master, .dwindle:
-            if floating { coordinator.setFloating(id, false) }
-            let algorithm: TilingAlgorithm? = switch name {
-            case .scrolling: .scrolling
-            case .master: .master
-            default: nil
-            }
-            coordinator.switchLayout(to: algorithm, for: id)
         default:
             if floating { coordinator.setFloating(id, false) }
-            if coordinator.isScrolling(id) { coordinator.switchLayout(to: nil, for: id) }
             coordinator.command(on: id) { $0.setLayout(name.mode, name.orientation) }
         }
         return .ok("layout \(name.rawValue)")
+    }
+
+    /// Switches the window's workspace to the layout after the one it has now (see `nextLayout`),
+    /// tiling a floating window first.
+    private static func workspaceLayout(_ names: [WorkspaceLayoutName], window: WindowID?) -> Reply {
+        guard let coordinator = AppState.shared.coordinator else { return .error("tiling is not running") }
+        let id = window ?? coordinator.focusedWindow
+        guard let floating = coordinator.isFloating(id) else { return .error("workspace-layout: no window dinky manages is focused") }
+        if floating { coordinator.setFloating(id, false) }
+        guard let algorithm = coordinator.tilingAlgorithm(of: id) else { return .error("workspace-layout: the window is not tiled") }
+        let name = nextLayout(in: names, current: [WorkspaceLayoutName.describing(algorithm)])
+        coordinator.switchLayout(to: name, for: id)
+        return .ok("workspace-layout \(name.rawValue)")
     }
 
     // MARK: Windows

@@ -235,13 +235,16 @@ public struct Workspace: Equatable, Sendable {
         }
     }
 
-    /// Switch algorithms. Changing the template deliberately rearranges the existing windows once.
+    /// Switch algorithms. Changing the template deliberately rearranges the existing windows once. Leaving master
+    /// for a dwindle tree, the windows keep the stack's mode: they were shown that way, so the switch does not
+    /// surprise with the config's.
     public mutating func setAlgorithm(_ new: TilingAlgorithm) {
         guard algorithm != new else { return }
         var ids = orderedWindows
         if case .master = new, !isMaster { ids = takeOverForMaster(ids) }
+        let mode: LayoutMode? = if case .dwindle = new, isMaster { stackMode } else { nil }
         algorithm = new
-        rebuild(ids)
+        rebuild(ids, mode: mode)
     }
 
     /// Move the master to `side`, keeping it, the stack and the stack's mode.
@@ -258,10 +261,12 @@ public struct Workspace: Equatable, Sendable {
         isFixedTree ? fixedWindows : isMasterTree ? masterOrder : windows
     }
 
-    /// Lay `ids` out afresh in the configured layout, in order, keeping the focus.
-    private mutating func rebuild(_ ids: [WindowID]) {
+    /// Lay `ids` out afresh in the configured layout, in order, keeping the focus. A dwindle tree takes `mode`
+    /// over the configured one.
+    private mutating func rebuild(_ ids: [WindowID], mode: LayoutMode? = nil) {
         switch algorithm {
-        case .dwindle(let mode):
+        case .dwindle(let configured):
+            let mode = mode ?? configured
             root = Container(mode == .accordion && autoOrientAccordions ? .auto : .horizontal, mode, ids.map(Node.window))
         case .fixed(let rows, let columns, let expand):
             root = Self.fixedRoot(rows: rows, columns: columns)

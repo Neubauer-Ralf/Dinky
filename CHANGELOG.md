@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+**Upgrading:** `layout scrolling`, `layout master` and `layout dwindle` no longer parse, so a config binding them fails to load. Write `workspace-layout scrolling`, `master` or `dwindle` instead, and split a cycle like `layout tiles accordion scrolling` into `layout tiles accordion` and `workspace-layout dwindle scrolling`.
+
+### Commands
+
+- `layout` only sets the focused window's container, the stack in a master layout and the column in a scrolling one, or floats and tiles the window, as in AeroSpace. The new `workspace-layout <dwindle|master|scrolling>...` switches the workspace's layout and cycles the same way. The Layout menu follows.
+- `workspace-layout dwindle` from a master workspace keeps the stack's mode instead of taking the config's.
+- New `%{workspace-layout}` format variable: `dwindle`, `fixed`, `master` or `scrolling`.
+
 ## 0.20
 
 ### Tiling

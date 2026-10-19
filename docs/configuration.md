@@ -145,14 +145,12 @@ leaves columns that are not wholly in view alone; a click scrolls to them.
 layout = 'scrolling'
 ```
 
-`layout scrolling` switches the focused window's workspace to scrolling on the fly, and
-`layout tiles` or `accordion` switches it back to its tree. The switch holds
-until you switch again. To cycle all three on one key:
-
-```toml
-[mode.main]
-ctrl-alt-cmd-s = 'layout tiles accordion scrolling'
-```
+`workspace-layout scrolling` switches the focused window's workspace to
+scrolling on the fly, and `workspace-layout dwindle` switches it back to its
+tree. The switch holds until you switch again, so
+`workspace-layout dwindle scrolling` toggles. In a scrolling workspace,
+`layout tiles` and `layout accordion` set the focused window's column, so they
+do nothing while it holds one window.
 
 ## `[scrolling]`
 
@@ -181,10 +179,11 @@ accordion running top to bottom, whichever window is focused, so
 `layout tiles accordion` toggles it. The stack keeps its mode while it is
 closed.
 
-`layout master` switches the focused window's workspace to the master layout on
-the fly, and `layout dwindle` switches it back to its tree: the one its config
-gives it, or tiles. The switch holds until you switch again, so
-`layout dwindle master` toggles.
+`workspace-layout master` switches the focused window's workspace to the master
+layout on the fly, and `workspace-layout dwindle` switches it back to its tree:
+the one its config gives it, or tiles. The windows keep the stack's mode, so an
+accordion stack comes back as an accordion whatever the config says. The switch
+holds until you switch again, so `workspace-layout dwindle master` toggles.
 
 `swap-with-master` swaps the focused window with the master, or the master with
 the top of the stack. `move` swaps the focused window with its neighbour, so the

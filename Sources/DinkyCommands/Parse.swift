@@ -70,6 +70,10 @@ extension Command {
             let layouts = args.compactMap(LayoutName.init(rawValue:))
             guard !none, layouts.count == args.count else { return nil }
             return .layout(layouts)
+        case "workspace-layout":
+            let layouts = args.compactMap(WorkspaceLayoutName.init(rawValue:))
+            guard !none, layouts.count == args.count else { return nil }
+            return .workspaceLayout(layouts)
         case "fullscreen":
             return none ? .fullscreen : nil
         case "flatten-workspace-tree":

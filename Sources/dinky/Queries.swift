@@ -144,6 +144,7 @@ private struct QueryState {
     func workspaceValues(_ n: Int, space: UInt64, on display: Display) -> [String: String] {
         let visible = space == display.currentSpaceID
         return ["workspace": "\(n)", "workspace-is-visible": "\(visible)",
-                "workspace-is-focused": "\(visible && display.uuid == focused?.uuid)"]
+                "workspace-is-focused": "\(visible && display.uuid == focused?.uuid)",
+                "workspace-layout": AppState.shared.coordinator?.layoutName(ofWorkspace: space) ?? ""]
     }
 }
