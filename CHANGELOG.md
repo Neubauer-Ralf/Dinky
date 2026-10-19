@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.21
 
 **Upgrading:** `layout scrolling`, `layout master` and `layout dwindle` no longer parse, so a config binding them fails to load. Write `workspace-layout scrolling`, `master` or `dwindle` instead, and split a cycle like `layout tiles accordion scrolling` into `layout tiles accordion` and `workspace-layout dwindle scrolling`.
 
