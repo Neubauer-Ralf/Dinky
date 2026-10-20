@@ -125,8 +125,8 @@ struct SchemaTests {
 
         [drag]
         placeholders = false
-        hold-to-split = true
-        hold-ms = 250
+        split-trigger = 'alt'
+        split-delay-ms = 250
 
         [modifiers]
         alt = 'left'

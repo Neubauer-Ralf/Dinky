@@ -3,13 +3,14 @@ import DinkyLayout
 
 // Dragging a tiled window with the mouse. On release, a drag that moved one edge of the window on an axis is a
 // resize: the tree takes the new size and the other tiles make room. Any other drag is a move: dropping it with the
-// pointer over another tile swaps the two, anywhere else puts it back. Holding the pointer still over a tile for a
-// moment first splits that tile instead: the dragged window takes the half the pointer is in. While a move is under
-// way, placeholders outline the window's tile and where it would land. Only frames that change while the mouse
-// button is down count as a drag, which keeps dinky's own frame writes and apps moving themselves out of it.
+// pointer over another tile swaps the two, anywhere else puts it back. With `[drag] split-trigger`, holding the
+// pointer still over a tile for a moment first, or holding a modifier, splits that tile instead: the dragged window
+// takes the half the pointer is in. While a move is under way, placeholders outline the window's tile and where it
+// would land. Only frames that change while the mouse button is down count as a drag, which keeps dinky's own frame
+// writes and apps moving themselves out of it.
 
-/// The tile the pointer rests on during a drag. Once it has stayed put for `[drag] hold-ms`, the drop splits the
-/// tile, until the pointer leaves it.
+/// The tile the pointer rests on during a drag. Once it has stayed put for `[drag] split-delay-ms`, the drop splits the
+/// tile, until the pointer leaves it. With a modifier as the trigger, it is armed while that key is held.
 struct DragHold {
     /// How far the pointer may drift and still be holding still.
     static let slack: CGFloat = 12
@@ -96,15 +97,20 @@ extension Coordinator {
         placeholders.show(dragged: id, home: home, target: landing, cornerRadius: CGFloat(window.cornerRadius))
     }
 
-    /// Follows the pointer from tile to tile: resting on one for `hold-ms` arms a split of it.
+    /// Follows the pointer from tile to tile: resting on one for `split-delay-ms`, or holding the trigger key, arms a
+    /// split of it.
     private func noteHold(over target: WindowID?) {
-        guard config.drag.holdToSplit, let target, let pointer else { return dragHold = nil }
+        guard config.drag.splitTrigger != .off, let target, let pointer else { return dragHold = nil }
+        if let key = splitKey {
+            let held = CGEventSource.flagsState(.combinedSessionState).contains(key)
+            return dragHold = DragHold(target: target, at: pointer, armed: held)
+        }
         guard var hold = dragHold, hold.target == target else { return dragHold = DragHold(target: target, at: pointer) }
         if !hold.armed {
             if hypot(pointer.x - hold.at.x, pointer.y - hold.at.y) > DragHold.slack {
                 hold.at = pointer
                 hold.since = Date()
-            } else if Date().timeIntervalSince(hold.since) * 1000 >= Double(config.drag.holdMs) {
+            } else if Date().timeIntervalSince(hold.since) * 1000 >= Double(config.drag.splitDelayMs) {
                 hold.armed = true
             }
         }
@@ -129,6 +135,17 @@ extension Coordinator {
     }
 
     private var pointer: CGPoint? { CGEvent(source: nil)?.location }
+
+    /// The modifier `split-trigger` names, nil for `off` and `hold`.
+    private var splitKey: CGEventFlags? {
+        switch config.drag.splitTrigger {
+        case .alt: .maskAlternate
+        case .ctrl: .maskControl
+        case .cmd: .maskCommand
+        case .shift: .maskShift
+        case .off, .hold: nil
+        }
+    }
 
     /// The edges a resize moved, going from the tile to the dropped frame: on each axis, one edge moved more than
     /// 2 pt and the other stayed. Nil for a move, where some axis had both edges move, or nothing did.

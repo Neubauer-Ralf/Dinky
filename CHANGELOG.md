@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- New `[drag] hold-to-split = true` splits a tile on a drop: hold a dragged window still over another tile for half a second and it takes the half the pointer is in instead of swapping. `hold-ms` sets the wait. Off by default.
+- New `[drag] split-trigger` splits a tile on a drop instead of swapping: with `'hold'`, hold a dragged window still over another tile for half a second, or with `'alt'`, `'ctrl'`, `'cmd'` or `'shift'`, hold that key, and it takes the half the pointer is in. `split-delay-ms` sets the wait. Off by default.
 
 ## 0.21
 
