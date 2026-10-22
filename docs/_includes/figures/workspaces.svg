@@ -1,0 +1,10 @@
+<svg viewBox="0 0 320 70" role="img" aria-label="Five workspaces: 1 to 3 on the main display, 4 and 5 on the secondary; 2 and 4 are showing">
+  <rect class="tile" x="6" y="6" width="44" height="30" rx="2"/><text x="28" y="21">1</text>
+  <rect class="tile focus" x="58" y="6" width="44" height="30" rx="2"/><text x="80" y="21">2</text>
+  <rect class="tile" x="110" y="6" width="44" height="30" rx="2"/><text x="132" y="21">3</text>
+  <rect class="tile focus" x="194" y="6" width="44" height="30" rx="2"/><text x="216" y="21">4</text>
+  <rect class="tile" x="246" y="6" width="44" height="30" rx="2"/><text x="268" y="21">5</text>
+  <path class="display" fill="none" d="M6 44 v4 h148 v-4 M194 44 v4 h96 v-4"/>
+  <text x="80" y="60">main</text>
+  <text x="242" y="60">secondary</text>
+</svg>

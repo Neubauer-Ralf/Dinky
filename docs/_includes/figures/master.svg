@@ -1,0 +1,11 @@
+<svg viewBox="0 0 160 100" role="img" aria-label="Master: one window on the left, three stacked on the right">
+  <rect class="display" x="0.5" y="0.5" width="159" height="99" rx="4"/>
+  <rect class="tile focus" x="6.0" y="6.0" width="86.8" height="88.0" rx="2"/>
+  <text x="49.4" y="50.0">master</text>
+  <rect class="tile" x="96.8" y="6.0" width="57.2" height="27.3" rx="2"/>
+  <text x="125.4" y="19.7">2</text>
+  <rect class="tile" x="96.8" y="37.3" width="57.2" height="25.3" rx="2"/>
+  <text x="125.4" y="50.0">3</text>
+  <rect class="tile" x="96.8" y="66.7" width="57.2" height="27.3" rx="2"/>
+  <text x="125.4" y="80.3">4</text>
+</svg>

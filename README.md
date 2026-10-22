@@ -22,6 +22,7 @@ Open dinky and grant Accessibility when asked. Windows tile as they open.
 
 Learn more:
 
+- [Concepts](https://dinky.rodeo/concepts/) and [Layouts](https://dinky.rodeo/layouts/)
 - [Configuration](https://dinky.rodeo/configuration/)
 - [Commands](https://dinky.rodeo/commands/)
 

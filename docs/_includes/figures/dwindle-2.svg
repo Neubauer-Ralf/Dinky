@@ -1,0 +1,7 @@
+<svg viewBox="0 0 160 100" role="img" aria-label="A second window splits it into two columns">
+  <rect class="display" x="0.5" y="0.5" width="159" height="99" rx="4"/>
+  <rect class="tile" x="6.0" y="6.0" width="72.0" height="88.0" rx="2"/>
+  <text x="42.0" y="50.0">1</text>
+  <rect class="tile focus" x="82.0" y="6.0" width="72.0" height="88.0" rx="2"/>
+  <text x="118.0" y="50.0">2</text>
+</svg>

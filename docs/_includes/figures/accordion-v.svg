@@ -1,0 +1,9 @@
+<svg viewBox="0 0 160 100" role="img" aria-label="A vertical accordion: neighbours peek out above and below">
+  <rect class="display" x="0.5" y="0.5" width="159" height="99" rx="4"/>
+  <rect class="tile peek" x="6.0" y="6.0" width="148.0" height="64.0" rx="2"/>
+  <text x="80.0" y="12.0">1</text>
+  <rect class="tile peek" x="6.0" y="30.0" width="148.0" height="64.0" rx="2"/>
+  <text x="80.0" y="88.0">3</text>
+  <rect class="tile focus" x="6.0" y="18.0" width="148.0" height="64.0" rx="2"/>
+  <text x="80.0" y="50.0">2</text>
+</svg>

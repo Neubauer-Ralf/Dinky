@@ -1,0 +1,11 @@
+<svg viewBox="0 0 160 100" role="img" aria-label="A tree: Ghostty left; Safari above an accordion of Mail and Notes">
+  <rect class="display" x="0.5" y="0.5" width="159" height="99" rx="4"/>
+  <rect class="tile" x="6.0" y="6.0" width="72.0" height="88.0" rx="2"/>
+  <text x="42.0" y="50.0">Ghostty</text>
+  <rect class="tile" x="82.0" y="6.0" width="72.0" height="42.0" rx="2"/>
+  <text x="118.0" y="27.0">Safari</text>
+  <rect class="tile peek" x="82.0" y="52.0" width="60.0" height="42.0" rx="2"/>
+  <text x="88.0" y="73.0" transform="rotate(-90 88.0 73.0)">Mail</text>
+  <rect class="tile focus" x="94.0" y="52.0" width="60.0" height="42.0" rx="2"/>
+  <text x="124.0" y="73.0">Notes</text>
+</svg>

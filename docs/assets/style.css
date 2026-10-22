@@ -207,6 +207,76 @@ th {
   margin: 0 0 1lh;
 }
 
+figure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5lh 2ch;
+  max-width: var(--measure);
+  margin: 1lh 0 2lh;
+}
+
+figure svg {
+  flex: none;
+  width: 22ch;
+  height: auto;
+  overflow: visible;
+}
+
+figure.wide svg {
+  width: 38ch;
+}
+
+figure.steps svg {
+  width: 18ch;
+}
+
+figure pre {
+  flex: 1 1 24ch;
+  margin: 0;
+  padding: 0;
+  background: none;
+}
+
+figcaption {
+  flex-basis: 100%;
+  max-width: var(--measure);
+  font-style: italic;
+}
+
+figure .display {
+  fill: var(--code);
+  stroke: var(--line);
+}
+
+figure .tile {
+  fill: var(--paper);
+  stroke: var(--ink);
+  vector-effect: non-scaling-stroke;
+}
+
+figure .off {
+  opacity: 0.5;
+}
+
+figure .focus {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+figure .empty {
+  fill: none;
+  stroke: var(--line);
+  stroke-dasharray: 3 3;
+}
+
+figure text {
+  fill: currentColor;
+  font-size: 9px;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;

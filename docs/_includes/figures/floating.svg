@@ -1,0 +1,8 @@
+<svg viewBox="0 0 160 100" role="img" aria-label="A floating window sits over the tiles">
+  <rect class="display" x="0.5" y="0.5" width="159" height="99" rx="4"/>
+  <rect class="tile" x="6.0" y="6.0" width="72.0" height="88.0" rx="2"/>
+  <rect class="tile" x="82.0" y="6.0" width="72.0" height="42.0" rx="2"/>
+  <rect class="tile" x="82.0" y="52.0" width="72.0" height="42.0" rx="2"/>
+  <rect class="tile focus" x="50.0" y="30.0" width="70.0" height="44.0" rx="2"/>
+  <text x="85.0" y="52.0">floating</text>
+</svg>

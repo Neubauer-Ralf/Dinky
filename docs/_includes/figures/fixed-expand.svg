@@ -1,0 +1,19 @@
+<svg viewBox="0 0 160 100" role="img" aria-label="The grid is full, so a seventh window opens a third column">
+  <rect class="display" x="0.5" y="0.5" width="159" height="99" rx="4"/>
+  <rect class="tile" x="6.0" y="6.0" width="47.3" height="27.3" rx="2"/>
+  <text x="29.7" y="19.7">1</text>
+  <rect class="tile" x="57.3" y="6.0" width="45.3" height="27.3" rx="2"/>
+  <text x="80.0" y="19.7">2</text>
+  <rect class="tile focus" x="106.7" y="6.0" width="47.3" height="27.3" rx="2"/>
+  <text x="130.3" y="19.7">7</text>
+  <rect class="tile" x="6.0" y="37.3" width="47.3" height="25.3" rx="2"/>
+  <text x="29.7" y="50.0">3</text>
+  <rect class="tile" x="57.3" y="37.3" width="45.3" height="25.3" rx="2"/>
+  <text x="80.0" y="50.0">4</text>
+  <rect class="tile empty" x="106.7" y="37.3" width="47.3" height="25.3" rx="2"/>
+  <rect class="tile" x="6.0" y="66.7" width="47.3" height="27.3" rx="2"/>
+  <text x="29.7" y="80.3">5</text>
+  <rect class="tile" x="57.3" y="66.7" width="45.3" height="27.3" rx="2"/>
+  <text x="80.0" y="80.3">6</text>
+  <rect class="tile empty" x="106.7" y="66.7" width="47.3" height="27.3" rx="2"/>
+</svg>

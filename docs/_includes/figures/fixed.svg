@@ -1,0 +1,13 @@
+<svg viewBox="0 0 160 100" role="img" aria-label="A fixed 2 by 3 grid with four windows and two empty cells">
+  <rect class="display" x="0.5" y="0.5" width="159" height="99" rx="4"/>
+  <rect class="tile" x="6.0" y="6.0" width="72.0" height="27.3" rx="2"/>
+  <text x="42.0" y="19.7">1</text>
+  <rect class="tile" x="82.0" y="6.0" width="72.0" height="27.3" rx="2"/>
+  <text x="118.0" y="19.7">2</text>
+  <rect class="tile" x="6.0" y="37.3" width="72.0" height="25.3" rx="2"/>
+  <text x="42.0" y="50.0">3</text>
+  <rect class="tile focus" x="82.0" y="37.3" width="72.0" height="25.3" rx="2"/>
+  <text x="118.0" y="50.0">4</text>
+  <rect class="tile empty" x="6.0" y="66.7" width="72.0" height="27.3" rx="2"/>
+  <rect class="tile empty" x="82.0" y="66.7" width="72.0" height="27.3" rx="2"/>
+</svg>

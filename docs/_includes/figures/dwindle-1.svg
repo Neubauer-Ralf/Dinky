@@ -1,0 +1,5 @@
+<svg viewBox="0 0 160 100" role="img" aria-label="One window fills the workspace">
+  <rect class="display" x="0.5" y="0.5" width="159" height="99" rx="4"/>
+  <rect class="tile focus" x="6.0" y="6.0" width="148.0" height="88.0" rx="2"/>
+  <text x="80.0" y="50.0">1</text>
+</svg>
