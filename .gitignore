@@ -7,3 +7,7 @@ dist/
 # Copied from CHANGELOG.md when the manual is built.
 docs/_includes/changelog.md
 __pycache__/
+# Written by `just docs`.
+docs/_site/
+docs/.jekyll-cache/
+docs/.jekyll-metadata

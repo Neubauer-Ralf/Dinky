@@ -24,6 +24,10 @@ install: bundle
     ln -sf "$PWD/build/dinky.app/Contents/MacOS/dinky" ~/.local/bin/dinky
     ls -l ~/.local/bin/dinky
 
+# Serve the manual at http://localhost:4000, on every interface, and rebuild it as docs/ changes.
+docs:
+    cd docs && jekyll serve --livereload --host 0.0.0.0
+
 # Fuzz the debug build in the Tart VM: random actions, layout invariants checked after each. See scripts/fuzz.py.
 fuzz seed="1" steps="150": build
     scripts/vm-fuzz.sh {{seed}} {{steps}}
