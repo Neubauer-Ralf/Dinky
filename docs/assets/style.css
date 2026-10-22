@@ -60,7 +60,7 @@ a:focus-visible {
 
 .shell {
   display: grid;
-  grid-template-columns: minmax(25ch, 28ch) minmax(0, 1fr);
+  grid-template-columns: minmax(28ch, 32ch) minmax(0, 1fr);
   min-height: calc(100vh - 3lh);
 }
 
