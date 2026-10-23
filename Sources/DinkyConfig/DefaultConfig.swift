@@ -75,6 +75,8 @@ extension Config {
 
     [drag]
     placeholders = true             # outline where a dragged tile came from and the tile it will swap with
+    split-trigger = 'off'           # off | hold | alt | ctrl | cmd | shift: what makes a drop split the tile instead of swapping
+    split-delay-ms = 500            # with split-trigger = 'hold', how long the pointer rests on the tile first
 
     # Which key of each pair bindings answer to: both | left | right. With alt = 'left',
     # right Option still types special characters.

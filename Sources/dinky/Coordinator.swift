@@ -54,6 +54,8 @@ final class Coordinator {
     /// began: a tile that changes during the drag must not make the drop look like a resize. See Drag.swift.
     var drag: (id: WindowID, start: CGRect)?
     var dragging: WindowID? { drag?.id }
+    /// The tile the pointer rests on during that drag.
+    var dragHold: DragHold?
     lazy var placeholders = DragPlaceholders()
     /// Called when the focused window changes.
     var onFocusChange: (() -> Void)?

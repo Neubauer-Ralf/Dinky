@@ -214,6 +214,18 @@
           "type": "boolean",
           "default": true,
           "description": "While you drag a tiled window, outline the tile it came from and the tile it will swap with."
+        },
+        "split-trigger": {
+          "type": "string",
+          "enum": ["off", "hold", "alt", "ctrl", "cmd", "shift"],
+          "default": "off",
+          "description": "What makes a drop split the tile instead of swapping: hold to rest the pointer on it for split-delay-ms, or a modifier key to hold."
+        },
+        "split-delay-ms": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 500,
+          "description": "With split-trigger = 'hold', how long the pointer must rest on the tile before the drop splits it."
         }
       }
     },

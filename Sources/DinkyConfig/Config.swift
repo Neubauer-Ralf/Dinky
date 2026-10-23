@@ -372,14 +372,26 @@ public struct Animations: Equatable {
 }
 
 /// `[drag]`: dragging a tiled window with the mouse.
+/// `[drag] split-trigger`: resting the pointer on a tile for `split-delay-ms`, or holding a modifier key.
+public enum SplitTrigger: String, CaseIterable {
+    case off, hold, alt, ctrl, cmd, shift
+}
+
 public struct Drag: Equatable {
     /// Outline the tile a dragged window came from and the one it will swap with.
     public var placeholders = true
+    /// What makes a drop split the tile under the pointer instead of swapping. Off by default.
+    public var splitTrigger = SplitTrigger.off
+    /// How long the pointer must rest on the tile first, with `split-trigger = 'hold'`.
+    public var splitDelayMs = 500
 
     public init() {}
 
     init(_ t: Table) throws {
         placeholders = try t.bool("placeholders") ?? placeholders
+        splitTrigger = try t.choice("split-trigger") ?? splitTrigger
+        splitDelayMs = try t.int("split-delay-ms") ?? splitDelayMs
+        guard splitDelayMs >= 0 else { throw ConfigError(path: t.path("split-delay-ms"), "must be 0 or more") }
         try t.done()
     }
 }

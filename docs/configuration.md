@@ -311,6 +311,11 @@ including when you follow a window with `move-window-to-workspace --follow`.
 Drag a tiled window's edge to resize it; the other tiles make room, and in the
 scrolling layout its column takes the new width. Drag the window itself and
 drop it on another tile to swap the two; dropped anywhere else, it goes back.
+With `split-trigger = 'hold'`, hold it still over a tile for `split-delay-ms`
+before dropping, or with a key like `split-trigger = 'ctrl'`, hold that key,
+and it splits that tile instead: the outline shrinks to the half the pointer is
+in, left, right, top or bottom, and the window lands there. The fixed, master
+and scrolling layouts only swap.
 While dinky is off, dragging neither swaps nor resizes tiles and shows no drop
 outlines.
 
@@ -319,6 +324,8 @@ outlines.
 | Key | Default | |
 |---|---|---|
 | `placeholders` | `true` | While you drag a tiled window, outline the tile it came from and the tile it will swap with. |
+| `split-trigger` | `'off'` | What makes a drop split the tile instead of swapping: `'hold'` to rest the pointer on it for `split-delay-ms`, or `'alt'`, `'ctrl'`, `'cmd'` or `'shift'` to hold that key. |
+| `split-delay-ms` | `500` | With `split-trigger = 'hold'`, how long the pointer must rest on the tile before the drop splits it. |
 
 </div>
 
@@ -489,6 +496,8 @@ duration-ms = 150               # roughly how long a window takes to arrive
 
 [drag]
 placeholders = true             # outline where a dragged tile came from and the tile it will swap with
+split-trigger = 'off'           # off | hold | alt | ctrl | cmd | shift: what makes a drop split the tile instead of swapping
+split-delay-ms = 500            # with split-trigger = 'hold', how long the pointer rests on the tile first
 
 # Which key of each pair bindings answer to: both | left | right. With alt = 'left',
 # right Option still types special characters.

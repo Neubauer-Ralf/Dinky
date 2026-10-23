@@ -390,10 +390,16 @@ struct ConfigTests {
         duration-ms = 300
         [drag]
         placeholders = false
+        split-trigger = 'alt'
+        split-delay-ms = 250
         """)
         #expect(!config.animations.enabled)
         #expect(config.animations.durationMs == 300)
         #expect(!config.drag.placeholders)
+        #expect(config.drag.splitTrigger == .alt)
+        #expect(config.drag.splitDelayMs == 250)
+        assertError("[drag]\nsplit-trigger = 'option'\n", path: "drag.split-trigger", line: 2, contains: "not one of")
+        assertError("[drag]\nsplit-delay-ms = -1\n", path: "drag.split-delay-ms", line: 2, contains: "0 or more")
         assertError("[animations]\nduration-ms = -1\n", path: "animations.duration-ms", line: 2, contains: "0 to 1000")
         assertError("[drag]\nghost = true\n", path: "drag.ghost", line: 2, contains: "unknown key")
     }
