@@ -96,7 +96,9 @@ command name.
 </div>
 
 Without a display flag, `list-workspaces` and `list-windows` cover the focused
-display; `list-monitors` lists every display. Format variables:
+display; `list-monitors` lists every display. `list-windows` leaves out windows
+an app has hidden rather than closed, such as a settings window closed with
+Cmd-W that the app keeps around. Format variables:
 
 - `%{right-padding}`, `%{newline}`, `%{tab}`
 - Workspaces: `workspace`, `workspace-is-focused`, `workspace-is-visible`,

@@ -16,7 +16,9 @@ struct WindowInfo {
     let frame: CGRect
 }
 
-/// Normal windows on any Space, front to back, filtered like the spike's `ls`. dinky's own (borders) are left out.
+/// Normal windows on any Space, front to back, filtered like the spike's `ls`. dinky's own (borders) are left out,
+/// and so are windows their app has ordered out, such as a settings window closed with Cmd-W that the app keeps
+/// around hidden: WindowServer still lists those, on the Space they were last shown on.
 func windowList() -> [WindowInfo] {
     let info = CGWindowListCopyWindowInfo([.optionAll], kCGNullWindowID) as? [[String: Any]] ?? []
     return info.compactMap { w in
@@ -29,7 +31,8 @@ func windowList() -> [WindowInfo] {
             frame: CGRect(x: bounds["X"] ?? 0, y: bounds["Y"] ?? 0, width: bounds["Width"] ?? 0, height: bounds["Height"] ?? 0))
         guard w[kCGWindowLayer as String] as? Int == 0, (w[kCGWindowAlpha as String] as? Double ?? 0) > 0,
               window.app != "Dock", window.app != "WindowServer", window.pid != getpid(),
-              !window.title.isEmpty || (window.frame.width > 40 && window.frame.height > 40) else { return nil }
+              !window.title.isEmpty || (window.frame.width > 40 && window.frame.height > 40),
+              dinky_window_info(window.id).isOrderedIn else { return nil }
         return window
     }
 }
