@@ -2,12 +2,17 @@
 
 ## Unreleased
 
-- New `[drag] split-trigger` splits a tile on a drop instead of swapping: with `'hold'`, hold a dragged window still over another tile for half a second, or with `'alt'`, `'ctrl'`, `'cmd'` or `'shift'`, hold that key, and it takes the half the pointer is in. `split-delay-ms` sets the wait. Off by default.
-- New `fullscreen-width` gives a `fullscreen` window a share of the width, centred, so a terminal or editor on an ultrawide need not span it; a window alone on a workspace takes the same share. Set it at the top level, per display in `[display.<pattern>]`, or per workspace in `[workspace.<number>]` and its display tables (#50).
+### Layout
+
+- New `fullscreen-width` gives a `fullscreen` window a share of the width, centred, so a terminal or editor on an ultrawide need not span it. A window alone on a workspace takes the same share. Set it at the top level, per display in `[display.<pattern>]`, or per workspace in `[workspace.<number>]` and its display tables (#50).
+
+### Mouse
+
+- Dropping a dragged window can split a tile instead of swapping. With `[drag] split-trigger = 'hold'`, hold the window still over the tile for `split-delay-ms` first; with `'alt'`, `'ctrl'`, `'cmd'` or `'shift'`, hold that key. The window takes the half the pointer is in, and the outline shows which. Off by default; the fixed, master and scrolling layouts only swap.
 
 ### Fixes
 
-- `list-windows` no longer lists windows an app has hidden rather than closed, such as a settings window closed with Cmd-W that the app keeps around. WindowServer still has those, so they stayed in the list on the workspace they were last shown on (#52).
+- `list-windows` no longer lists windows an app has hidden rather than closed, such as a settings window closed with Cmd-W that the app keeps around. Before, they stayed in the list on the workspace they were last shown on (#52).
 
 ## 0.21
 
