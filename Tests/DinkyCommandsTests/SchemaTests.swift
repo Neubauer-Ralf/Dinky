@@ -52,6 +52,7 @@ struct SchemaTests {
         default-layout = 'accordion'
         default-tiling = true
         float-windows-without-fullscreen = false
+        fullscreen-width = 0.8
 
         [follow-app-activation]
         enabled = true
@@ -67,6 +68,7 @@ struct SchemaTests {
         columns = 2
         rows = 2
         expand = 'rows'
+        fullscreen-width = 0.7
 
         [workspace.2.display.built-in]
         tiling = true
@@ -74,6 +76,7 @@ struct SchemaTests {
         columns = 1
         rows = 1
         expand = 'accordion'
+        fullscreen-width = 0.9
 
         [accordion]
         padding = 20
@@ -95,6 +98,7 @@ struct SchemaTests {
         outer.right = 4
 
         [display.main]
+        fullscreen-width = 0.6
         gaps.inner = 2
         gaps.outer.top = 30
         gaps.outer.bottom = 0
@@ -102,6 +106,7 @@ struct SchemaTests {
         gaps.outer.right = 0
 
         [display.secondary]
+        fullscreen-width = 0.5
         gaps.inner.horizontal = 1
         gaps.inner.vertical = 1
         gaps.outer = 8

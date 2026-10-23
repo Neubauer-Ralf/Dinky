@@ -117,11 +117,14 @@ public enum MonitorPattern: Equatable {
 public struct DisplayOverride: Equatable {
     public var pattern: MonitorPattern
     public var gaps = GapsPatch()
+    /// `fullscreen-width` on these displays, nil for the top-level value.
+    public var fullscreenWidth: Double?
 
     init(_ pattern: String, _ t: Table) throws {
         guard !pattern.isEmpty else { throw ConfigError(path: t.path, "a display pattern can't be empty") }
         self.pattern = MonitorPattern(pattern)
         gaps = try t.table("gaps").map(GapsPatch.init) ?? gaps
+        fullscreenWidth = try t.fullscreenWidth()
         if try t.int("workspaces") != nil {
             throw ConfigError(path: t.path("workspaces"),
                               "workspaces are numbered across displays now; put one on a display with [workspace-to-display]")
@@ -133,7 +136,7 @@ public struct DisplayOverride: Equatable {
 extension Config {
     /// The display tables matching `monitor`, least specific first: `main` and `secondary`, then name
     /// patterns, shortest first, so applying them in order lets the most specific win.
-    private func overrides(for monitor: Monitor) -> [DisplayOverride] {
+    func overrides(for monitor: Monitor) -> [DisplayOverride] {
         displays.filter { $0.pattern.matches(monitor) }.sorted { $0.pattern.specificity < $1.pattern.specificity }
     }
 

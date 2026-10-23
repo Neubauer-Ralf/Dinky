@@ -3,6 +3,7 @@
 ## Unreleased
 
 - New `[drag] split-trigger` splits a tile on a drop instead of swapping: with `'hold'`, hold a dragged window still over another tile for half a second, or with `'alt'`, `'ctrl'`, `'cmd'` or `'shift'`, hold that key, and it takes the half the pointer is in. `split-delay-ms` sets the wait. Off by default.
+- New `fullscreen-width` gives a `fullscreen` window a share of the width, centred, so a terminal or editor on an ultrawide need not span it; a window alone on a workspace takes the same share. Set it at the top level, per display in `[display.<pattern>]`, or per workspace in `[workspace.<number>]` and its display tables (#50).
 
 ### Fixes
 

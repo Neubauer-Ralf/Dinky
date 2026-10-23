@@ -22,6 +22,9 @@ public struct Config: Equatable {
     public var followAppActivation = FollowAppActivation()
     /// Float standard windows whose fullscreen button is missing or disabled, as AeroSpace does.
     public var floatWindowsWithoutFullscreen = true
+    /// The share of the width inside the outer gaps a fullscreen window takes, centred; a window alone on a
+    /// workspace takes it too. 1 fills the width. `[display.<pattern>]` and workspace tables override it.
+    public var fullscreenWidth = 1.0
     public var accordion = Accordion()
     public var scrolling = Scrolling()
     public var master = Master()
@@ -117,6 +120,7 @@ public struct Config: Equatable {
         }
         followAppActivation = try FollowAppActivation(t, "follow-app-activation") ?? followAppActivation
         floatWindowsWithoutFullscreen = try t.bool("float-windows-without-fullscreen") ?? floatWindowsWithoutFullscreen
+        fullscreenWidth = try t.fullscreenWidth() ?? fullscreenWidth
         accordion = try t.table("accordion").map(Accordion.init) ?? accordion
         scrolling = try t.table("scrolling").map(Scrolling.init) ?? scrolling
         master = try t.table("master").map(Master.init) ?? master
@@ -158,6 +162,9 @@ public struct WorkspaceSettings: Equatable {
     public var rows = 1
     public var columns = 1
     public var expand = ExpansionKind.columns
+    /// `fullscreen-width` from this table or the workspace's it inherits from; nil leaves it to the display's or
+    /// the top-level value. See `Config.fullscreenWidth(forWorkspace:on:)`.
+    public var fullscreenWidth: Double?
     /// `[workspace.N.display.<pattern>]`: the settings that replace these on the displays a pattern matches,
     /// in file order.
     public var displays: [WorkspaceOnDisplay] = []
@@ -184,6 +191,7 @@ public struct WorkspaceSettings: Equatable {
         self.rows = rows ?? self.rows
         self.columns = columns ?? self.columns
         self.expand = expand ?? self.expand
+        fullscreenWidth = try t.fullscreenWidth() ?? fullscreenWidth
         if readsDisplays, let displayTable = try t.table("display") {
             for pattern in displayTable.keys {
                 guard !pattern.isEmpty else { throw ConfigError(path: displayTable.path, "a display pattern can't be empty") }
@@ -213,6 +221,24 @@ extension Config {
             best = display
         }
         return best?.settings ?? settings
+    }
+
+    /// The share of the width a fullscreen window, or a window alone, takes on the workspace with this number on
+    /// `monitor`: the workspace's own tables' value, else the most specific matching `[display.<pattern>]`'s, else
+    /// the top-level `fullscreen-width`.
+    public func fullscreenWidth(forWorkspace number: Int?, on monitor: Monitor? = nil) -> Double {
+        if let width = settings(forWorkspace: number, on: monitor).fullscreenWidth { return width }
+        guard let monitor else { return fullscreenWidth }
+        return overrides(for: monitor).last { $0.fullscreenWidth != nil }?.fullscreenWidth ?? fullscreenWidth
+    }
+}
+
+extension Table {
+    /// `fullscreen-width`, a share from 0.1 to 1, wherever it is allowed.
+    func fullscreenWidth() throws -> Double? {
+        guard let width = try double("fullscreen-width") else { return nil }
+        guard (0.1...1).contains(width) else { throw ConfigError(path: path("fullscreen-width"), "must be 0.1 to 1") }
+        return width
     }
 }
 

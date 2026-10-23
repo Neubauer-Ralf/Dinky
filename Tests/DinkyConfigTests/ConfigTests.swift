@@ -140,6 +140,42 @@ struct ConfigTests {
         assertError("[workspace.2.display.'']\nlayout = 'fixed'\n", path: "workspace.2.display", line: 1, contains: "can't be empty")
     }
 
+    @Test func `Fullscreen width`() throws {
+        #expect(try Config.parse("").fullscreenWidth(forWorkspace: 1) == 1)
+        #expect(try Config.parse("fullscreen-width = 1\n").fullscreenWidth == 1, "an integer 1 is a number too")
+        let config = try Config.parse("""
+        fullscreen-width = 0.8
+        [display.dell]
+        fullscreen-width = 0.55
+        [display.main]
+        gaps.inner = 2
+        [workspace.2]
+        fullscreen-width = 0.7
+        [workspace.2.display.built-in]
+        fullscreen-width = 0.9
+        [workspace.3]
+        layout = 'accordion'
+        [workspace.3.display.dell]
+        fullscreen-width = 0.6
+        """)
+        let dell = Monitor(name: "DELL U3421WE", isMain: true, count: 2)
+        let laptop = Monitor(name: "Built-in Retina Display", isMain: false, count: 2)
+        #expect(config.fullscreenWidth(forWorkspace: 1) == 0.8, "the top-level value")
+        #expect(config.fullscreenWidth(forWorkspace: 1, on: laptop) == 0.8)
+        #expect(config.fullscreenWidth(forWorkspace: 1, on: dell) == 0.55, "a display table overrides it; one without the key does not")
+        #expect(config.fullscreenWidth(forWorkspace: 2, on: dell) == 0.7, "a workspace table overrides the display's")
+        #expect(config.fullscreenWidth(forWorkspace: 2, on: laptop) == 0.9, "and its own display table that")
+        #expect(config.fullscreenWidth(forWorkspace: 3, on: laptop) == 0.8, "a workspace table without the key inherits")
+        #expect(config.fullscreenWidth(forWorkspace: 3, on: dell) == 0.6)
+        #expect(config.fullscreenWidth(forWorkspace: nil, on: dell) == 0.55)
+        assertError("fullscreen-width = 0.0\n", path: "fullscreen-width", line: 1, contains: "0.1 to 1")
+        assertError("fullscreen-width = 1.5\n", path: "fullscreen-width", line: 1, contains: "0.1 to 1")
+        assertError("[display.main]\nfullscreen-width = 2.0\n", path: "display.main.fullscreen-width", line: 2, contains: "0.1 to 1")
+        assertError("[workspace.2]\nfullscreen-width = 0.05\n", path: "workspace.2.fullscreen-width", line: 2, contains: "0.1 to 1")
+        assertError("[workspace.2.display.main]\nfullscreen-width = 0.0\n", path: "workspace.2.display.main.fullscreen-width",
+                    line: 2, contains: "0.1 to 1")
+    }
+
     @Test func `Unknown top-level key fails`() {
         assertError("workspaces = 3\ngap = 8\n", path: "gap", line: 2, contains: "unknown key")
         assertError("config-version = 1\n", path: "config-version", line: 1, contains: "unknown key")

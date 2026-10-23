@@ -152,6 +152,35 @@ struct FullscreenTests {
         #expect(ws.layout() == layout)
     }
 
+    @Test func `Fullscreen width narrows the window and centres it`() {
+        var ws = workspace(3, bounds: rect(0, 0, 1010, 610), gaps: Gaps(all: 10))
+        let tiled = ws.layout().frames
+        ws.fullscreenWidth = 0.5
+        ws.focus(2)
+        ws.toggleFullscreen()
+        #expect(ws.layout().frames[2] == rect(258, 10, 495, 590))
+        #expect(ws.layout().frames[1] == tiled[1], "the tiles underneath are not narrowed")
+        ws.toggleFullscreen()
+        #expect(ws.layout().frames == tiled)
+    }
+
+    @Test func `A window alone takes the fullscreen width too`() {
+        var ws = workspace(1)
+        ws.fullscreenWidth = 0.6
+        #expect(ws.layout().frames[1] == rect(200, 0, 600, 600))
+        ws.insert(2)
+        #expect(ws.layout().frames[1] == rect(0, 0, 500, 600), "two windows share the width")
+        var scrolling = workspace(1, algorithm: .scrolling)
+        scrolling.fullscreenWidth = 0.6
+        #expect(scrolling.layout().frames[1] == rect(200, 0, 600, 600), "a lone column fills the display, so it is centred too")
+        var grid = workspace(1, algorithm: .fixed(rows: 1, columns: 2, expand: .columns))
+        grid.fullscreenWidth = 0.6
+        #expect(grid.layout().frames[1] == rect(0, 0, 500, 600), "a lone window in a fixed grid keeps its cell")
+        var whole = workspace(1)
+        whole.fullscreenWidth = 1
+        #expect(whole.layout().frames[1] == rect(0, 0, 1000, 600))
+    }
+
     @Test func `Removing fullscreen window clears it`() {
         var ws = workspace(3)
         ws.toggleFullscreen()

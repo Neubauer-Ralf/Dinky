@@ -37,8 +37,8 @@ Tiled, floating or fullscreen.
 </figure>
 
 Tiled windows share the workspace. A floating window sits where you put it,
-over the tiles. Fullscreen fills the workspace, above the tiles; it is not
-macOS full screen. Dialogs, sheets and panels float on their own. A
+over the tiles. Fullscreen fills the workspace, above the tiles, or the share
+of its width `fullscreen-width` gives it; it is not macOS full screen. Dialogs, sheets and panels float on their own. A
 [rule](#rule) decides for anything else.
 
 ## Tree

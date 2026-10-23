@@ -272,6 +272,7 @@ final class Coordinator {
             workspaces[key]!.columnWidth = config.scrolling.columnWidth
             workspaces[key]!.masterSize = config.master.size
             workspaces[key]!.setMasterSide(config.master.layoutSide)
+            workspaces[key]!.fullscreenWidth = fullscreenWidth(for: key)
             workspaces[key]!.setAlgorithm(workspaces[key]!.chosenAlgorithm ?? settings(for: key).algorithm)
         }
     }
@@ -284,6 +285,12 @@ final class Coordinator {
     func settings(for space: UInt64) -> WorkspaceSettings {
         config.settings(forWorkspace: AppState.shared.numbers.number(of: space),
                         on: displays.display(containingSpace: space).map(displays.monitor))
+    }
+
+    /// The share of the width a fullscreen or lone window takes on the Space's workspace, resolved the same way.
+    private func fullscreenWidth(for space: UInt64) -> Double {
+        config.fullscreenWidth(forWorkspace: AppState.shared.numbers.number(of: space),
+                               on: displays.display(containingSpace: space).map(displays.monitor))
     }
 
     /// Classifies a window the first time it is on screen, then keeps it in the tree of its current Space
@@ -371,6 +378,7 @@ final class Coordinator {
             workspaces[key]!.columnWidth = config.scrolling.columnWidth
             workspaces[key]!.masterSize = config.master.size
             workspaces[key]!.setMasterSide(config.master.layoutSide)
+            workspaces[key]!.fullscreenWidth = fullscreenWidth(for: key)
             workspaces[key]!.walls = walls(of: display)
         }
         return key

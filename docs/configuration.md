@@ -31,6 +31,7 @@ file is left alone, with the read error shown in the menu.
 | `default-tiling` | `true` | Set `false` to leave workspaces untiled unless overridden. |
 | `follow-app-activation` | `true` | Cmd-Tab and Dock clicks switch Spaces the fast way. Needs the macOS "switch to a Space with open windows" setting off. Write it as a [`[follow-app-activation]`](#follow-app-activation) table to leave some apps unfollowed. |
 | `float-windows-without-fullscreen` | `true` | Float windows that can't go full screen, such as Finder's copy progress, About This Mac and Calculator. Terminals and editors that can hide their title bar still tile. A `layout tiling` rule tiles a window anyway. |
+| `fullscreen-width` | `1.0` | The share of the width, inside the outer gaps, that a `fullscreen` window takes, centred. A window alone on a workspace takes it too, so a lone terminal on an ultrawide need not span it. `0.1` to `1`. [`[display.<pattern>]`](#displaypattern) and [`[workspace.<number>]`](#workspacenumber) override it. |
 
 </div>
 
@@ -60,6 +61,7 @@ numbered workspace.
 | `layout` | `default-layout` | Its layout, with the same values. |
 | `columns`, `rows` | `1` | A fixed layout's template. |
 | `expand` | `'columns'` | What a fixed layout does when every cell is taken. |
+| `fullscreen-width` | top-level `fullscreen-width` | The share of the width a `fullscreen` window, or a window alone, takes on this workspace, over the top-level and display values. |
 
 </div>
 
@@ -256,13 +258,19 @@ own workspace once the displays settle.
 
 ## `[display.<pattern>]`
 
-Per-display `gaps`, with the patterns above. Name patterns beat
-`main`/`secondary`; longer names beat shorter. A workspace's layout per display
-goes in [`[workspace.<number>.display.<pattern>]`](#workspacenumberdisplaypattern).
+Per-display `gaps` and `fullscreen-width`, with the patterns above. Name
+patterns beat `main`/`secondary`; longer names beat shorter. A workspace's
+layout per display goes in
+[`[workspace.<number>.display.<pattern>]`](#workspacenumberdisplaypattern),
+and a `fullscreen-width` there, or in `[workspace.<number>]`, beats the
+display's.
 
 ```toml
 [display.main]          # the display with the bar
 gaps.outer.top = 44
+
+[display.'DELL U3421WE']   # an ultrawide: a fullscreen or lone window takes half the width, centred
+fullscreen-width = 0.55
 ```
 
 ## `[borders]`
@@ -435,6 +443,7 @@ default-layout = 'tiles'        # tiles (dwindle) | dwindle | accordion | fixed 
 default-tiling = true           # false leaves workspaces untiled unless overridden
 follow-app-activation = true    # Cmd-Tab and Dock clicks switch Spaces the fast way
 float-windows-without-fullscreen = true   # progress windows, About, Calculator and the like float
+fullscreen-width = 1.0          # share of the width a fullscreen window, or a window alone, takes, centred
 
 # Example: follow every app but one. Replaces the follow-app-activation line above.
 # [follow-app-activation]
@@ -476,6 +485,8 @@ outer = 8                       # or { top = 8, bottom = 8, left = 8, right = 8 
 # Overrides for one display.
 # [display.main]
 # gaps.outer.top = 44
+# [display.'DELL U3421WE']
+# fullscreen-width = 0.55       # on an ultrawide, a fullscreen or lone window takes half the width
 
 [borders]
 enabled = true

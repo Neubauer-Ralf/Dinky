@@ -25,7 +25,7 @@ prints it.
 | `resize <smart\|width\|height> <+n\|-n>` | Resize by n points. |
 | `layout <tiles\|accordion\|horizontal\|vertical\|auto\|h_tiles\|v_tiles\|h_accordion\|v_accordion\|floating\|tiling>...` | Set the layout of the focused window's container, or float/tile the window. In a [master layout](configuration.md#master) the container is the stack, in a [scrolling layout](configuration.md#scrolling) the window's column. Given several, applies the one after the current one, so `layout floating tiling` and `layout tiles accordion` toggle. Acts on the focused window, tiling it first if it floats, so it does nothing on an empty workspace. |
 | `workspace-layout <dwindle\|master\|scrolling>...` | Switch the focused window's workspace to its tree (`dwindle`, as its config gives it), to [master](configuration.md#master) with the focused window as the master, or to [scrolling](configuration.md#scrolling). The switch holds until the next. Given several, applies the one after the current one, so `workspace-layout dwindle master` toggles and `workspace-layout dwindle master scrolling` cycles. |
-| `fullscreen` | Toggle filling the workspace (not macOS full screen). |
+| `fullscreen` | Toggle filling the workspace (not macOS full screen). [`fullscreen-width`](configuration.md#top-level) narrows and centres it. |
 | `flatten-workspace-tree` | Put every window back into the workspace's layout, in order, undoing tree edits. A scrolling workspace keeps its column widths. |
 | `balance-sizes` | Give every window an equal share. |
 | `swap-with-master` | In a [master layout](configuration.md#master), swap the focused window with the master, or the master with the top of the stack. |
