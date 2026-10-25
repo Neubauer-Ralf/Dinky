@@ -85,6 +85,11 @@
       "description": "Float windows that can't go full screen, such as Finder's copy progress, About This Mac and Calculator. A `layout tiling` rule tiles one anyway."
     },
     "fullscreen-width": { "type": "number", "minimum": 0.1, "maximum": 1, "default": 1, "description": "The share of the width, inside the outer gaps, that a fullscreen window takes, centred. A window alone on a workspace takes it too. Display and workspace tables override it." },
+    "tile-over-hidden-dock": {
+      "type": "boolean",
+      "default": false,
+      "description": "With the Dock set to auto-hide, tile to the bottom and side edges of the screen rather than the area macOS reports, which can keep the shown Dock's strip for a while after Mission Control."
+    },
     "scrolling": {
       "type": "object",
       "additionalProperties": false,

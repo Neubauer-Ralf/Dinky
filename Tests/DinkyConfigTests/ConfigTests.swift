@@ -12,6 +12,7 @@ struct ConfigTests {
         #expect(config.defaultTiling)
         #expect(config.followAppActivation == FollowAppActivation())
         #expect(config.floatWindowsWithoutFullscreen)
+        #expect(!config.tileOverHiddenDock)
         #expect(config.accordion.padding == 30)
         #expect(config.accordion.orientation == .auto)
         #expect(config.gaps == Gaps())
@@ -54,12 +55,14 @@ struct ConfigTests {
         default-layout = 'accordion'
         follow-app-activation = false
         float-windows-without-fullscreen = false
+        tile-over-hidden-dock = true
         """)
         #expect(!config.startAtLogin)
         #expect(config.workspaces == 3)
         #expect(config.defaultLayout == .accordion)
         #expect(!config.followAppActivation.enabled)
         #expect(!config.floatWindowsWithoutFullscreen)
+        #expect(config.tileOverHiddenDock)
         assertError("workspaces = 0\n", path: "workspaces", line: 1, contains: "at least 1")
         assertError("default-layout = 'stack'\n", path: "default-layout", line: 1, contains: "'tiles', 'dwindle', 'accordion', 'fixed', 'scrolling', 'master'")
     }

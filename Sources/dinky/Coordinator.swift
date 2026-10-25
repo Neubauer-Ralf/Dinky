@@ -229,7 +229,7 @@ final class Coordinator {
     private func fitToDisplays() {
         for key in workspaces.keys {
             guard let display = displays.display(containingSpace: key) else { continue }
-            let (bounds, gaps, walls) = (display.visibleArea, self.gaps(on: display), self.walls(of: display))
+            let (bounds, gaps, walls) = (area(of: display), self.gaps(on: display), self.walls(of: display))
             edit(key) {
                 $0.bounds = bounds
                 $0.gaps = gaps
@@ -256,7 +256,7 @@ final class Coordinator {
     func moveTree(from: UInt64, to: UInt64) {
         guard from != to, let display = displays.display(containingSpace: to), workspaces[to]?.windows.isEmpty != false,
               var tree = workspaces.removeValue(forKey: from) else { return }
-        tree.bounds = display.visibleArea
+        tree.bounds = area(of: display)
         tree.gaps = gaps(on: display)
         tree.walls = walls(of: display)
         workspaces[to] = tree
@@ -275,6 +275,13 @@ final class Coordinator {
             workspaces[key]!.fullscreenWidth = fullscreenWidth(for: key)
             workspaces[key]!.setAlgorithm(workspaces[key]!.chosenAlgorithm ?? settings(for: key).algorithm)
         }
+    }
+
+    /// The area a display's trees tile in: its visible area, or with `tile-over-hidden-dock` and the Dock set to
+    /// auto-hide, everything below the menu bar.
+    private func area(of display: Display) -> CGRect {
+        tilingArea(frame: display.frame, visible: display.visibleArea,
+                   ignoringDock: config.tileOverHiddenDock && dockAutohides())
     }
 
     private func gaps(on display: Display) -> DinkyLayout.Gaps {
@@ -371,7 +378,7 @@ final class Coordinator {
         guard settings.tiling else { return nil }
         let key = window.spaceID
         if workspaces[key] == nil {
-            workspaces[key] = Workspace(bounds: display.visibleArea, gaps: gaps(on: display),
+            workspaces[key] = Workspace(bounds: area(of: display), gaps: gaps(on: display),
                                         accordionPadding: CGFloat(config.accordion.padding),
                                         autoOrientAccordions: config.accordion.orientation == .auto,
                                         algorithm: settings.algorithm)

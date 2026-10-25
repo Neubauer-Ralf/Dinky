@@ -53,6 +53,7 @@ struct SchemaTests {
         default-tiling = true
         float-windows-without-fullscreen = false
         fullscreen-width = 0.8
+        tile-over-hidden-dock = true
 
         [follow-app-activation]
         enabled = true

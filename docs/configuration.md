@@ -32,6 +32,7 @@ file is left alone, with the read error shown in the menu.
 | `follow-app-activation` | `true` | Cmd-Tab and Dock clicks switch Spaces the fast way. Needs the macOS "switch to a Space with open windows" setting off. Write it as a [`[follow-app-activation]`](#follow-app-activation) table to leave some apps unfollowed. |
 | `float-windows-without-fullscreen` | `true` | Float windows that can't go full screen, such as Finder's copy progress, About This Mac and Calculator. Terminals and editors that can hide their title bar still tile. A `layout tiling` rule tiles a window anyway. |
 | `fullscreen-width` | `1.0` | The share of the width, inside the outer gaps, that a `fullscreen` window takes, centred. A window alone on a workspace takes it too, so a lone terminal on an ultrawide need not span it. `0.1` to `1`. [`[display.<pattern>]`](#displaypattern) and [`[workspace.<number>]`](#workspacenumber) override it. |
+| `tile-over-hidden-dock` | `false` | With the Dock set to auto-hide, tile to the bottom and side edges of the screen rather than the area macOS reports. After Mission Control, macOS can keep reporting the shown Dock's strip for a minute or more, until the Dock restarts, and the tiles shrink to leave it free. The menu bar is still left free. |
 
 </div>
 
@@ -444,6 +445,7 @@ default-tiling = true           # false leaves workspaces untiled unless overrid
 follow-app-activation = true    # Cmd-Tab and Dock clicks switch Spaces the fast way
 float-windows-without-fullscreen = true   # progress windows, About, Calculator and the like float
 fullscreen-width = 1.0          # share of the width a fullscreen window, or a window alone, takes, centred
+tile-over-hidden-dock = false   # true tiles where an auto-hidden Dock sits, ignoring a stale Dock strip
 
 # Example: follow every app but one. Replaces the follow-app-activation line above.
 # [follow-app-activation]

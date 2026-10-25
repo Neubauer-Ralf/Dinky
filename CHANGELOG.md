@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Layout
+
+- New `tile-over-hidden-dock`: with the Dock set to auto-hide, tiles reach the bottom and side edges of the screen whatever macOS reports. After Mission Control, macOS can keep reporting the shown Dock's strip for a minute or more, until the Dock restarts, and tiles shrank to leave it free. Off by default.
+
 ## 0.22
 
 ### Layout

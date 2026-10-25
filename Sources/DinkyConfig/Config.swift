@@ -25,6 +25,9 @@ public struct Config: Equatable {
     /// The share of the width inside the outer gaps a fullscreen window takes, centred; a window alone on a
     /// workspace takes it too. 1 fills the width. `[display.<pattern>]` and workspace tables override it.
     public var fullscreenWidth = 1.0
+    /// With the Dock set to auto-hide, tile to the screen's edges instead of the area macOS reports, which can
+    /// keep the shown Dock's strip for a minute or more after Mission Control. The menu bar is still left free.
+    public var tileOverHiddenDock = false
     public var accordion = Accordion()
     public var scrolling = Scrolling()
     public var master = Master()
@@ -121,6 +124,7 @@ public struct Config: Equatable {
         followAppActivation = try FollowAppActivation(t, "follow-app-activation") ?? followAppActivation
         floatWindowsWithoutFullscreen = try t.bool("float-windows-without-fullscreen") ?? floatWindowsWithoutFullscreen
         fullscreenWidth = try t.fullscreenWidth() ?? fullscreenWidth
+        tileOverHiddenDock = try t.bool("tile-over-hidden-dock") ?? tileOverHiddenDock
         accordion = try t.table("accordion").map(Accordion.init) ?? accordion
         scrolling = try t.table("scrolling").map(Scrolling.init) ?? scrolling
         master = try t.table("master").map(Master.init) ?? master

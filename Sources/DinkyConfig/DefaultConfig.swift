@@ -15,6 +15,7 @@ extension Config {
     follow-app-activation = true    # Cmd-Tab and Dock clicks switch Spaces the fast way
     float-windows-without-fullscreen = true   # progress windows, About, Calculator and the like float
     fullscreen-width = 1.0          # share of the width a fullscreen window, or a window alone, takes, centred
+    tile-over-hidden-dock = false   # true tiles where an auto-hidden Dock sits, ignoring a stale Dock strip
 
     # Example: follow every app but one. Replaces the follow-app-activation line above.
     # [follow-app-activation]
